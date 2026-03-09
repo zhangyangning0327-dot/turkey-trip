@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turkey 2025 · Cecilia's Trip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --sand: #F5EDD8;
+  --terracotta: #C4623A;
+  --deep: #1A1208;
+  --gold: #D4A853;
+  --teal: #2E7D7A;
+  --cream: #FAF6EE;
+  --muted: #8B7355;
+  --border: rgba(196,98,58,0.15);
+  --sidebar-w: 360px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(--deep); }
+
+/* ── HEADER ── */
+.header {
+  background: var(--deep);
+  color: var(--sand);
+  padding: 13px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  z-index: 100;
+  border-bottom: 1px solid rgba(196,98,58,0.2);
+  flex-shrink: 0;
+}
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 70% 50%, rgba(196,98,58,0.18) 0%, transparent 60%);
+  pointer-events: none;
+}
+.header-left { display: flex; align-items: center; gap: 12px; position: relative; }
+.header-flag { font-size: 22px; line-height: 1; }
+.header-title { font-family: 'Playfair Display', serif; font-size: 17px; line-height: 1; }
+.header-title em { font-style: italic; color: var(--terracotta); }
+.header-sub { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 8px; position: relative; }
+
+/* ── LAYOUT ── */
+.app { display: flex; flex-direction: column; height: 100vh; }
+.main { display: grid; grid-template-columns: var(--sidebar-w) 1fr; flex: 1; overflow: hidden; min-height: 0; }
+
+/* ── SIDEBAR ── */
+.sidebar { background: var(--cream); display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
+.sidebar-header {
+  padding: 13px 18px 11px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--sand);
+}
+.sidebar-header h2 { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 400; }
+.sidebar-header p { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+.days-scroll { overflow-y: auto; flex: 1; }
+.days-scroll::-webkit-scrollbar { width: 3px; }
+.days-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── DAY CARDS ── */
+.day-card { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+.day-card.active { background: rgba(196,98,58,0.05); }
+
+.day-header {
+  padding: 12px 18px;
+  display: flex; align-items: flex-start; gap: 12px;
+  cursor: pointer; user-select: none;
+}
+.day-header:hover { background: rgba(196,98,58,0.04); }
+.day-header:active { background: rgba(196,98,58,0.1); }
+
+.day-num {
+  min-width: 38px; height: 38px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; line-height: 1.1; flex-shrink: 0;
+}
+.day-num .label { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }
+.day-num .n { font-size: 16px; font-family: 'DM Mono', monospace; }
+
+.day-info { flex: 1; min-width: 0; }
+.day-info h3 { font-size: 13px; font-weight: 600; line-height: 1.3; }
+.day-info .date { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
+
+.day-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+.city-tag {
+  display: inline-block; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 20px; font-weight: 600;
+}
+
+/* ── WEATHER BADGE ── */
+.weather-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; padding: 2px 7px; border-radius: 20px;
+  background: rgba(212,168,83,0.12); border: 1px solid rgba(212,168,83,0.25);
+  color: #8B6914; font-weight: 500; white-space: nowrap;
+}
+.weather-badge .wi { font-size: 12px; }
+
+.day-chevron { font-size: 11px; color: var(--muted); margin-top: 13px; flex-shrink: 0; transition: transform 0.2s; }
+.day-card.active .day-chevron { transform: rotate(180deg); }
+
+/* ── FLIGHT BADGE ── */
+.flight-badge {
+  margin: 0 18px 10px;
+  padding: 7px 11px; border-radius: 7px;
+  background: rgba(46,125,122,0.08); border: 1px solid rgba(46,125,122,0.18);
+  font-size: 10px; color: var(--teal); font-family: 'DM Mono', monospace; line-height: 1.6;
+}
+
+/* ── STOPS LIST ── */
+.stops-list { padding: 0 18px 12px; display: none; }
+.day-card.active .stops-list { display: block; }
+
+.stop-item {
+  display: flex; gap: 10px;
+  padding: 9px 6px 9px 4px;
+  border-bottom: 1px dashed rgba(139,115,85,0.15);
+  border-radius: 6px;
+}
+.stop-item:last-child { border-bottom: none; }
+
+.stop-timeline {
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 3px; flex-shrink: 0; width: 14px;
+}
+.stop-dot-outer {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid; background: white; flex-shrink: 0;
+}
+.stop-line { width: 1px; flex: 1; min-height: 10px; opacity: 0.15; margin-top: 2px; }
+
+.stop-content { flex: 1; min-width: 0; }
+.stop-name { font-size: 12px; font-weight: 600; color: var(--deep); line-height: 1.3; }
+.stop-time { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
+.stop-note { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+.stop-name.hotel { color: var(--teal); }
+.stop-item.hotel-stop .stop-dot-outer { background: var(--teal) !important; border-color: var(--teal) !important; }
+.stop-item.optional-stop { opacity: 0.75; }
+.optional-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); background: rgba(139,115,85,0.1);
+  border: 1px dashed rgba(139,115,85,0.3);
+  border-radius: 4px; padding: 2px 6px; margin-top: 4px; font-weight: 600;
+}
+
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; color: #B85C00;
+  background: rgba(196,98,58,0.1); border-radius: 4px;
+  padding: 2px 6px; margin-top: 4px; font-weight: 500;
+}
+
+/* ── LINKS ROW ── */
+.stop-links {
+  display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;
+}
+.stop-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 500;
+  padding: 3px 9px; border-radius: 20px;
+  text-decoration: none;
+  border: 1px solid;
+  transition: opacity 0.15s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.stop-link:hover { opacity: 0.7; }
+.stop-link.maps {
+  color: #1A73E8; border-color: rgba(26,115,232,0.25);
+  background: rgba(26,115,232,0.06);
+}
+.stop-link.book {
+  color: var(--teal); border-color: rgba(46,125,122,0.25);
+  background: rgba(46,125,122,0.06);
+}
+.stop-link.info {
+  color: var(--muted); border-color: rgba(139,115,85,0.25);
+  background: rgba(139,115,85,0.06);
+}
+
+/* ── MAP ── */
+.map-wrap { position: relative; }
+#map { width: 100%; height: 100%; }
+
+.map-legend {
+  position: absolute; bottom: 20px; left: 10px; z-index: 400;
+  background: rgba(26,18,8,0.88); backdrop-filter: blur(8px);
+  padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(196,98,58,0.2);
+  pointer-events: none;
+}
+.legend-title { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+.legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--sand); margin-bottom: 3px; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── POPUP ── */
+.leaflet-popup-content-wrapper {
+  background: var(--deep); color: var(--sand);
+  border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  border: 1px solid rgba(196,98,58,0.3); font-family: 'DM Sans', sans-serif;
+}
+.leaflet-popup-tip { background: var(--deep); }
+.leaflet-popup-content { margin: 13px 16px; }
+.popup-title { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--gold); margin-bottom: 3px; }
+.popup-time { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--terracotta); margin-bottom: 6px; }
+.popup-note { font-size: 11px; color: rgba(245,237,216,0.75); line-height: 1.5; max-width: 210px; margin-bottom: 8px; }
+.popup-links { display: flex; gap: 6px; flex-wrap: wrap; }
+.popup-link {
+  font-size: 10px; padding: 3px 9px; border-radius: 20px;
+  text-decoration: none; font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.15); color: var(--sand);
+  background: rgba(255,255,255,0.08);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.popup-link:hover { background: rgba(255,255,255,0.14); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.day-card { animation: fadeUp 0.25s ease both; }
+.day-card:nth-child(1) { animation-delay: 0.04s; }
+.day-card:nth-child(2) { animation-delay: 0.08s; }
+.day-card:nth-child(3) { animation-delay: 0.12s; }
+.day-card:nth-child(4) { animation-delay: 0.16s; }
+.day-card:nth-child(5) { animation-delay: 0.20s; }
+.day-card:nth-child(6) { animation-delay: 0.24s; }
+.day-card:nth-child(7) { animation-delay: 0.28s; }
+.day-card:nth-child(8) { animation-delay: 0.32s; }
+.day-card:nth-child(9) { animation-delay: 0.36s; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <span class="header-flag">🇹🇷</span>
+      <div>
+        <div class="header-title">9 Days in <em>Turkey</em></div>
+        <div class="header-sub">Apr 24 – May 2 · Cecilia's Trip</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h2>Daily Itinerary</h2>
+        <p>Click a day · Click a stop to zoom map</p>
+      </div>
+      <div class="days-scroll">
+        <div id="days-container"></div>
+      </div>
+    </div>
+
+    <!-- MAP -->
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="map-legend">
+        <div class="legend-title">Cities</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#C4623A"></div>Istanbul</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8B5E3C"></div>Cappadocia</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2E7D7A"></div>Antalya</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+// weather: icon, temp range, short condition note for each day
+const WEATHER = {
+  1:  { icon: "🌤️", temp: "16–21°C", note: "Partly cloudy, mild" },
+  2:  { icon: "⛅", temp: "15–20°C", note: "Cloudy spells, comfortable" },
+  3:  { icon: "🌥️", temp: "14–19°C", note: "Overcast, light breeze" },
+  4:  { icon: "☀️", temp: "10–18°C", note: "Sunny · Cold at dawn" },
+  5:  { icon: "🌄", temp: "8–19°C",  note: "Clear skies · 5am: ~8°C!" },
+  6:  { icon: "☀️", temp: "18–25°C", note: "Warm & sunny, Antalya" },
+  7:  { icon: "🌞", temp: "19–26°C", note: "Hot & sunny, ruins day" },
+  8:  { icon: "🌞", temp: "19–26°C", note: "Perfect beach weather" },
+  9:  { icon: "🌤️", temp: "18–24°C", note: "Fine for travel day" },
+};
+
+// Hotels
+const HOTELS = {
+  istanbul:   { name: "Grand Hyatt Istanbul",      lat: 41.0406, lng: 28.9886, maps: "https://maps.google.com/?q=Grand+Hyatt+Istanbul" },
+  cappadocia: { name: "Artemis Cave Suites",        lat: 38.6407, lng: 34.8315, maps: "https://maps.google.com/?q=Artemis+Cave+Suites+Goreme" },
+  antalya:    { name: "Delta Hotels Antalya Lara",  lat: 36.8583, lng: 30.7325, maps: "https://maps.google.com/?q=Delta+Hotels+Antalya+Lara" },
+};
+
+function hotelStop(key, time, note, warn) {
+  const h = HOTELS[key];
+  return {
+    name: "🏨 " + h.name, lat: h.lat, lng: h.lng, time, note: note || "Your base for this stay.",
+    warn: warn || null, isHotel: true,
+    links: [{ label: "📍 Maps", url: h.maps, type: "maps" }]
+  };
+}
+
+const DAYS = [
+  {
+    day: 1, date: "Thu 24 Apr", city: "Istanbul",
+    title: "Arrive Istanbul — New District",
+    flight: "✈ 3U3827  CTU 01:35 → IST 06:30",
+    color: "#C4623A",
+    stops: [
+      {
+        name: "Istanbul Airport (IST)", lat: 41.2761, lng: 28.7287, time: "06:30",
+        note: "Buy Istanbul Card at metro station — 200 TL load + 165 TL card fee. Take Havaist bus or metro to Taksim (~45 min).",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Istanbul+Airport+IST", type: "maps" },
+          { label: "🚌 Havaist Bus", url: "https://www.hava.ist/en", type: "info" }
+        ]
+      },
+      hotelStop("istanbul", "08:30", "Check in & rest. Hotel is steps from Taksim Square. Drop bags, freshen up before exploring."),
+      {
+        name: "Dolmabahçe Palace", lat: 41.0391, lng: 29.0005, time: "14:00",
+        note: "35 EUR · 09:00–17:00 · 10 min walk downhill from hotel along the Bosphorus. No photos inside.",
+        warn: "Closed Monday",
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Dolmabahce+Palace+Istanbul", type: "maps" },
+          { label: "🎟 Tickets", url: "https://www.millisaraylar.gov.tr/en/palaces/dolmabahce-palace", type: "book" }
+        ]
+      },
+      {
+        name: "Galata Tower", lat: 41.0255, lng: 28.9741, time: "17:00",
+        note: "30 EUR · 08:30–22:00 · Take tram T1 south from Kabataş to Karaköy, then walk up. 360° city views at golden hour!",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Galata+Tower+Istanbul", type: "maps" },
+          { label: "🎟 Tickets", url: "https://galatakulesi.gov.tr/en/visit/admission/", type: "book" }
+        ]
+      },
+      hotelStop("istanbul", "19:30", "Return to hotel. Tram T1 to Kabataş then walk or taxi up to Harbiye (~20 min total).")
+    ]
+  },
+  {
+    day: 2, date: "Fri 25 Apr", city: "Istanbul",
+    title: "Sultanahmet — Historic Core",
+    color: "#C4623A",
+    stops: [
+      hotelStop("istanbul", "08:30", "Take tram T1 from Kabataş → Sultanahmet (15 min). All today's stops are within 5 min walk of each other!"),
+      {
+        name: "Hagia Sophia", lat: 41.0086, lng: 28.9802, time: "09:00",
+        note: "2,650 TL · Free entry as mosque · Arrive before 10am to beat tour groups. Allow 1–1.5 hrs.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Hagia+Sophia+Istanbul", type: "maps" },
+          { label: "ℹ️ Info", url: "https://en.wikipedia.org/wiki/Hagia_Sophia", type: "info" }
+        ]
+      },
+      {
+        name: "Topkapı Palace", lat: 41.0115, lng: 28.9834, time: "11:00",
+        note: "2,750 TL · 09:00–17:00 · 2 min walk from Hagia Sophia. Allow 3 hours. Harem is an extra ticket.",
+        warn: "Closed Tuesday",
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Topkapi+Palace+Istanbul", type: "maps" },
+          { label: "🎟 Tickets", url: "https://www.millisaraylar.gov.tr/en/palaces/topkapi-palace", type: "book" }
+        ]
+      },
+      {
+        name: "Istanbul Archaeological Museum", lat: 41.0122, lng: 28.9811, time: "14:30",
+        note: "15 EUR · 09:00–17:30 · Inside Topkapı grounds — visit right after palace. Closes at 17:30, don't miss it!",
+        warn: "Closed Monday",
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Istanbul+Archaeological+Museum", type: "maps" }
+        ]
+      },
+      {
+        name: "Blue Mosque", lat: 41.0054, lng: 28.9768, time: "16:00",
+        note: "FREE 🕌 · 5 min walk south of Topkapı. Bring headscarf. Closed ~30 min during prayer times.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Blue+Mosque+Istanbul", type: "maps" }
+        ]
+      },
+      {
+        name: "Basilica Cistern", lat: 41.0084, lng: 28.9779, time: "17:00",
+        note: "30 EUR · 09:00–18:30 · 1 min walk from Blue Mosque. Underground Byzantine cistern with Medusa columns.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Basilica+Cistern+Istanbul", type: "maps" },
+          { label: "🎟 Book Online", url: "https://yerebatan.com/en", type: "book" }
+        ]
+      },
+      hotelStop("istanbul", "19:00", "Tram T1 from Sultanahmet → Kabataş, then walk up to hotel (~20 min).")
+    ]
+  },
+  {
+    day: 3, date: "Sat 26 Apr", city: "Istanbul",
+    title: "Asian Side — Kadıköy & Ferry",
+    color: "#C4623A",
+    stops: [
+      hotelStop("istanbul", "11:00", "Relaxed morning. Walk or taxi to Kabataş for the ferry."),
+      {
+        name: "Eminönü Ferry Pier", lat: 41.0175, lng: 28.9744, time: "12:00",
+        note: "Take commuter ferry (NOT tourist boat) to Kadıköy — use Istanbul Card. Ferry runs every 20–30 min, ~25 min crossing.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Eminonu+Ferry+Pier+Istanbul", type: "maps" },
+          { label: "🚢 Ferry Info", url: "https://www.ido.com.tr/en", type: "info" }
+        ]
+      },
+      {
+        name: "Kadıköy Market", lat: 40.9819, lng: 29.0325, time: "12:30",
+        note: "Explore the Asian side market, Moda café strip & Üsküdar waterfront. Shops open from noon. Great street food!",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Kadikoy+Market+Istanbul", type: "maps" }
+        ]
+      },
+      hotelStop("istanbul", "18:00", "Ferry back to Eminönü/Karaköy, then tram T1 to Kabataş, walk or taxi up to hotel.")
+    ]
+  },
+  {
+    day: 4, date: "Sun 27 Apr", city: "Cappadocia",
+    title: "Fly to Cappadocia — Afternoon Explore",
+    flight: "✈ TK2002  IST 08:15 → NAV 09:35",
+    color: "#8B5E3C",
+    stops: [
+      hotelStop("istanbul", "05:00", "Check out. Taxi from hotel to IST airport — allow ~60 min for the drive.", "Check out by 05:00!"),
+      {
+        name: "Istanbul Airport (IST) — Depart", lat: 41.2761, lng: 28.7287, time: "06:15",
+        note: "IST is huge — allow 90 min before flight. Check-in at TK desks. Flight TK2002 departs 08:15.",
+        warn: "Be at airport by 06:15!",
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Istanbul+Airport+IST", type: "maps" },
+          { label: "✈ Turkish Airlines", url: "https://www.turkishairlines.com/en-int/flights/manage-booking", type: "book" }
+        ]
+      },
+      {
+        name: "Nevşehir Airport (NAV)", lat: 38.7719, lng: 34.5355, time: "09:35",
+        note: "Pre-booked minibus to Göreme ~30–40 min. Ask Artemis Cave Suites to arrange pickup the night before!",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Nevsehir+Kapadokya+Airport", type: "maps" }
+        ]
+      },
+      hotelStop("cappadocia", "10:30", "Check in, freshen up & have lunch. Book balloon for tomorrow if not done. Then explore nearby in the afternoon!"),
+      {
+        name: "Üçhisar Castle", lat: 38.6299, lng: 34.8054, time: "13:30",
+        note: "~3 km from hotel · Highest point in Cappadocia · 07:00–21:00. Best panoramic view of fairy chimneys — great first impression!",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Uchisar+Castle+Cappadocia", type: "maps" }
+        ]
+      },
+      {
+        name: "Pigeon Valley", lat: 38.6380, lng: 34.8150, time: "15:00",
+        note: "Walking path between Üçhisar and Göreme (~3 km, ~1 hr easy walk). Named for the thousands of dovecotes carved into the cliffs. Ends back near hotel.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Pigeon+Valley+Cappadocia", type: "maps" }
+        ]
+      },
+      hotelStop("cappadocia", "17:00", "Back at hotel. Dinner & very early night — 04:30 balloon pickup tomorrow!", "Sleep early — 04:30 pickup!")
+    ]
+  },
+  {
+    day: 5, date: "Mon 28 Apr", city: "Cappadocia",
+    title: "Hot Air Balloon + Göreme Museum",
+    color: "#8B5E3C",
+    stops: [
+      hotelStop("cappadocia", "04:30", "Balloon company pickup from hotel lobby. Dress in layers — it's ~8°C at dawn!", "04:30 pickup — don't be late!"),
+      {
+        name: "Rose Valley (Balloon Launch)", lat: 38.6591, lng: 34.8433, time: "05:00",
+        note: "🎈 150–300 EUR/person · EUR cash only! ~1 hr flight over fairy chimneys at sunrise. Truly unforgettable.",
+        warn: "Book 2–3 weeks ahead!",
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Rose+Valley+Goreme+Cappadocia", type: "maps" },
+          { label: "🎈 Kapadokya Balloons", url: "https://www.kapadokyaballoons.com", type: "book" },
+          { label: "🎈 Royal Balloon", url: "https://www.royalballoon.com", type: "book" }
+        ]
+      },
+      hotelStop("cappadocia", "08:30", "Return to hotel. Celebratory breakfast with balloon views. Rest before afternoon."),
+      {
+        name: "Göreme Open Air Museum", lat: 38.6416, lng: 34.8439, time: "10:30",
+        note: "720 TL + 150 TL Dark Church · 08:00–16:15 · 5 min walk from hotel. Byzantine rock churches with stunning frescoes.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Goreme+Open+Air+Museum", type: "maps" },
+          { label: "ℹ️ Info", url: "https://en.wikipedia.org/wiki/G%C3%B6reme_Open_Air_Museum", type: "info" }
+        ]
+      },
+      hotelStop("cappadocia", "13:00", "Return to hotel. Rest up — early departure tomorrow for Kayseri Airport.", "Early start tomorrow!")
+    ]
+  },
+  {
+    day: 6, date: "Tue 29 Apr", city: "Antalya",
+    title: "Fly to Antalya — Old Town Walk",
+    flight: "✈ XQ7033  ASR 09:55 → AYT 11:15",
+    color: "#2E7D7A",
+    stops: [
+      hotelStop("cappadocia", "07:30", "Check out. Hotel-arranged taxi to Kayseri Airport (ASR), ~60 min drive.", "Check out by 07:30!"),
+      {
+        name: "Kayseri Airport (ASR)", lat: 38.7703, lng: 35.4954, time: "08:30",
+        note: "Allow 90 min before flight XQ7033 (09:55). Small airport — easy check-in.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Kayseri+Erkilet+Airport+ASR", type: "maps" }
+        ]
+      },
+      {
+        name: "Antalya Airport (AYT)", lat: 36.8988, lng: 30.8004, time: "11:15",
+        note: "Arrive 11:15. Taxi to Delta Hotels Antalya Lara ~15 min. Drop bags, then head to Old Town.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Antalya+Airport+AYT", type: "maps" }
+        ]
+      },
+      hotelStop("antalya", "12:00", "Check in. Hotel is in Lara beach area, ~4 km east of Old Town — easy taxi ride."),
+      {
+        name: "Hadrian's Gate", lat: 36.8852, lng: 30.7086, time: "13:30",
+        note: "FREE · Open 24hrs · ~3.5 km from hotel, 10–12 min taxi via Lara Cad. Roman triumphal arch built 130 AD — the entrance gate to Kaleiçi Old Town.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Hadrian%27s+Gate+Antalya", type: "maps" }
+        ]
+      },
+      {
+        name: "Kaleiçi Old Town", lat: 36.8823, lng: 30.7053, time: "14:00",
+        note: "Wander Ottoman cobblestone streets, the Roman harbour & cliff-top views. Excellent restaurants for dinner here.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Kaleici+Old+Town+Antalya", type: "maps" }
+        ]
+      },
+      hotelStop("antalya", "19:00", "Taxi back to Lara hotel (~10 min, ~50–80 TL).")
+    ]
+  },
+  {
+    day: 7, date: "Wed 30 Apr", city: "Antalya",
+    title: "Ancient Ruins — East Corridor",
+    color: "#2E7D7A",
+    stops: [
+      hotelStop("antalya", "08:30", "Book a day tour from hotel, or rent a car. Ruins are east of Antalya — perfect linear route with no backtracking."),
+      {
+        name: "Perge Ancient City", lat: 36.9577, lng: 30.8526, time: "09:00",
+        note: "~17 km from hotel · 08:00–17:00 · Roman city with colonnaded main street. Allow 1.5 hrs.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Perge+Ancient+City+Antalya", type: "maps" },
+          { label: "ℹ️ Info", url: "https://en.wikipedia.org/wiki/Perge", type: "info" }
+        ]
+      },
+      {
+        name: "Aspendos Theatre", lat: 36.9389, lng: 31.1722, time: "11:30",
+        note: "~47 km from hotel · 08:00–16:30 · Drive east from Perge (~30 min). Best-preserved Roman theatre in the world!",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Aspendos+Theatre+Antalya", type: "maps" }
+        ]
+      },
+      hotelStop("antalya", "16:00", "Drive back to hotel ~47 km (~45 min). Or dine near Aspendos before returning.")
+    ]
+  },
+  {
+    day: 8, date: "Thu 1 May", city: "Antalya",
+    title: "Free Day — Antalya at Leisure",
+    color: "#2E7D7A",
+    stops: [
+      hotelStop("antalya", "Morning", "No fixed plans today — fully flexible. Suggestions below are all optional 😊"),
+      {
+        name: "Antalya Museum", lat: 36.8860, lng: 30.6797, time: "10:00 (optional)",
+        note: "Best archaeological museum in Turkey · 09:00–17:00 · ~3.5 km west of hotel via Konyaaltı Cad, 10–15 min taxi. Tip: take the nostalgic tram from museum → Kaleiçi after!",
+        warn: null, optional: true,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Antalya+Archaeology+Museum+Konyaalti", type: "maps" }
+        ]
+      },
+      {
+        name: "Kaleiçi & Harbour", lat: 36.8823, lng: 30.7053, time: "12:30 (optional)",
+        note: "5 min walk from museum, or taxi from hotel. Lunch at the harbour, wander Old Town at a relaxed pace, cliff views.",
+        warn: null, optional: true,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Kaleici+Harbour+Antalya", type: "maps" }
+        ]
+      },
+      hotelStop("antalya", "17:00", "Taxi back to hotel. Pack bags tonight — early airport departure tomorrow.", "Pack tonight!")
+    ]
+  },
+  {
+    day: 9, date: "Fri 2 May", city: "Istanbul → Chengdu",
+    title: "Fly Home via Istanbul",
+    flight: "✈ TK2443  AYT 10:20 → IST 12:05\n✈ 3U3828  IST 15:40 → CTU 05:20+1",
+    color: "#C4623A",
+    stops: [
+      hotelStop("antalya", "08:00", "Check out. Taxi to Antalya Airport — ~20 min drive.", "Check out by 08:00!"),
+      {
+        name: "Antalya Airport (AYT)", lat: 36.8988, lng: 30.8004, time: "08:30",
+        note: "TK2443 departs 10:20 → Istanbul IST 12:05. Check in with Turkish Airlines.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Antalya+Airport+AYT", type: "maps" },
+          { label: "✈ Turkish Airlines", url: "https://www.turkishairlines.com/en-int/flights/manage-booking", type: "book" }
+        ]
+      },
+      {
+        name: "Istanbul Airport (IST) — Transit", lat: 41.2761, lng: 28.7287, time: "12:05",
+        note: "~3.5 hrs layover. Stay airside — no need to re-clear security. 3U3828 departs 15:40 → CTU 05:20+1.",
+        warn: null,
+        links: [
+          { label: "📍 Maps", url: "https://maps.google.com/?q=Istanbul+Airport+IST", type: "maps" },
+          { label: "✈ Sichuan Airlines", url: "https://www.sichuanair.com/en-us", type: "book" }
+        ]
+      }
+    ]
+  }
+];
+
+const cityBgMap = {
+  "Istanbul": "rgba(196,98,58,0.12)", "Cappadocia": "rgba(139,94,60,0.12)",
+  "Antalya": "rgba(46,125,122,0.12)", "Istanbul → Chengdu": "rgba(196,98,58,0.12)"
+};
+const cityTextMap = {
+  "Istanbul": "#C4623A", "Cappadocia": "#8B5E3C",
+  "Antalya": "#2E7D7A", "Istanbul → Chengdu": "#C4623A"
+};
+
+// ── MAP ───────────────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl: false });
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap · © CARTO', maxZoom: 19
+}).addTo(map);
+
+const allMarkers = [], allPolylines = [];
+
+function makeSvgIcon(color, num) {
+  return L.divIcon({
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="44" viewBox="0 0 34 44">
+      <path d="M17 2C9.268 2 3 8.268 3 16c0 10 14 26 14 26s14-16 14-26C31 8.268 24.732 2 17 2z"
+        fill="${color}" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/>
+      <circle cx="17" cy="16" r="8" fill="white" opacity="0.92"/>
+      <text x="17" y="20" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="${color}" font-weight="bold">${num}</text>
+    </svg>`,
+    iconSize: [34, 44], iconAnchor: [17, 44], popupAnchor: [0, -46], className: ''
+  });
+}
+
+function makeHotelIcon(color) {
+  return L.divIcon({
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+      <circle cx="14" cy="14" r="13" fill="${color}" stroke="white" stroke-width="2" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/>
+      <text x="14" y="19" text-anchor="middle" font-family="sans-serif" font-size="13">🏨</text>
+    </svg>`,
+    iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16], className: ''
+  });
+}
+
+function makeSmallDot(color) {
+  return L.divIcon({
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12">
+      <circle cx="6" cy="6" r="5" fill="${color}" stroke="white" stroke-width="1.5"/>
+    </svg>`,
+    iconSize: [12, 12], iconAnchor: [6, 6], popupAnchor: [0, -8], className: ''
+  });
+}
+
+DAYS.forEach(day => {
+  const coords = day.stops.map(s => [s.lat, s.lng]);
+  if (coords.length > 1) {
+    const poly = L.polyline(coords, {
+      color: day.color, weight: 2.5, opacity: 0.55, dashArray: '5,5'
+    }).addTo(map);
+    allPolylines.push({ poly, day: day.day });
+  }
+  day.stops.forEach((stop, si) => {
+    const icon = stop.isHotel ? makeHotelIcon(day.color) : (si === 0 ? makeSvgIcon(day.color, day.day) : makeSmallDot(day.color));
+    // Build popup links
+    const popupLinks = stop.links.map(l =>
+      `<a class="popup-link" href="${l.url}" target="_blank">${l.label}</a>`
+    ).join('');
+    const marker = L.marker([stop.lat, stop.lng], { icon })
+      .addTo(map)
+      .bindPopup(`
+        <div class="popup-title">${stop.name}</div>
+        <div class="popup-time">Day ${day.day} · ${day.date} · ${stop.time}</div>
+        <div class="popup-note">${stop.note}${stop.warn ? `<br><strong style="color:#E8845A">⚠️ ${stop.warn}</strong>` : ''}</div>
+        <div class="popup-links">${popupLinks}</div>
+      `, { maxWidth: 280 });
+    allMarkers.push({ marker, day: day.day, stop });
+  });
+});
+
+const allCoords = DAYS.flatMap(d => d.stops.map(s => [s.lat, s.lng]));
+map.fitBounds(allCoords, { padding: [40, 40] });
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────
+const container = document.getElementById('days-container');
+
+DAYS.forEach(day => {
+  const w = WEATHER[day.day];
+  const card = document.createElement('div');
+  card.className = 'day-card';
+  card.id = `day-card-${day.day}`;
+
+  const flightLines = day.flight ? day.flight.split('\n') : [];
+  const flightHtml = flightLines.length
+    ? `<div class="flight-badge">${flightLines.map(l => `<div>${l}</div>`).join('')}</div>` : '';
+
+  const stopsHtml = day.stops.map((s, si) => {
+    const isLast = si === day.stops.length - 1;
+    const linksHtml = s.links.map(l =>
+      `<a class="stop-link ${l.type}" href="${l.url}" target="_blank" onclick="event.stopPropagation()">${l.label}</a>`
+    ).join('');
+    return `
+    <div class="stop-item${s.isHotel ? ' hotel-stop' : ''}${s.optional ? ' optional-stop' : ''}" onclick="flyToStop(${s.lat},${s.lng},${day.day})">
+      <div class="stop-timeline">
+        <div class="stop-dot-outer" style="border-color:${s.isHotel ? '#2E7D7A' : day.color};${(si===0||s.isHotel)?`background:${s.isHotel?'#2E7D7A':day.color}`:''}"></div>
+        ${!isLast ? `<div class="stop-line" style="background:${day.color}"></div>` : ''}
+      </div>
+      <div class="stop-content">
+        <div class="stop-name${s.isHotel?' hotel':''}">${s.name}</div>
+        <div class="stop-time">${s.time}</div>
+        <div class="stop-note">${s.note}</div>
+        ${s.optional ? `<div class="optional-badge">✦ Optional</div>` : ''}
+        ${s.warn ? `<div class="stop-warn">⚠️ ${s.warn}</div>` : ''}
+        <div class="stop-links">${linksHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="day-header" onclick="toggleDay(${day.day})">
+      <div class="day-num" style="background:${cityBgMap[day.city]};color:${day.color}">
+        <span class="label">Day</span>
+        <span class="n">${day.day}</span>
+      </div>
+      <div class="day-info">
+        <h3>${day.title}</h3>
+        <div class="date">${day.date}</div>
+        <div class="day-meta">
+          <span class="city-tag" style="background:${cityBgMap[day.city]};color:${cityTextMap[day.city]}">${day.city}</span>
+          <span class="weather-badge"><span class="wi">${w.icon}</span>${w.temp} · ${w.note}</span>
+        </div>
+      </div>
+      <div class="day-chevron">▾</div>
+    </div>
+    ${flightHtml}
+    <div class="stops-list">${stopsHtml}</div>
+  `;
+  container.appendChild(card);
+});
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────
+let activeDay = null;
+
+function toggleDay(dayNum) {
+  const card = document.getElementById(`day-card-${dayNum}`);
+  if (activeDay === dayNum) {
+    card.classList.remove('active');
+    activeDay = null;
+    map.fitBounds(allCoords, { padding: [40, 40], animate: true });
+    allPolylines.forEach(({ poly }) => poly.setStyle({ opacity: 0.55, weight: 2.5 }));
+    allMarkers.forEach(({ marker }) => marker.setOpacity(1));
+    return;
+  }
+  if (activeDay !== null) document.getElementById(`day-card-${activeDay}`)?.classList.remove('active');
+  card.classList.add('active');
+  activeDay = dayNum;
+
+  const day = DAYS.find(d => d.day === dayNum);
+  const coords = day.stops.map(s => [s.lat, s.lng]);
+  if (coords.length === 1) map.setView(coords[0], 13, { animate: true, duration: 0.7 });
+  else map.fitBounds(coords, { padding: [60, 60], animate: true, duration: 0.7 });
+
+  allPolylines.forEach(({ poly, day: d }) =>
+    poly.setStyle({ opacity: d === dayNum ? 0.9 : 0.08, weight: d === dayNum ? 3.5 : 1.5 }));
+  allMarkers.forEach(({ marker, day: d }) =>
+    marker.setOpacity(d === dayNum ? 1 : 0.2));
+}
+
+function flyToStop(lat, lng, dayNum) {
+  map.setView([lat, lng], 15, { animate: true, duration: 0.6 });
+  const found = allMarkers.find(m => Math.abs(m.stop.lat - lat) < 0.0001 && m.day === dayNum);
+  if (found) found.marker.openPopup();
+}
+</script>
+</body>
+</html>
