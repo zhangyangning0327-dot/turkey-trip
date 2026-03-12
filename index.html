@@ -20,6 +20,7 @@
   --muted: #8B7355;
   --border: rgba(196,98,58,0.15);
   --sidebar-w: 360px;
+  --sheet-peek: 100px; /* how much of bottom sheet peeks above fold on mobile */
 }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; overflow: hidden; }
@@ -27,49 +28,47 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
 
 /* ── HEADER ── */
 .header {
-  background: var(--deep);
-  color: var(--sand);
-  padding: 13px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  position: relative;
-  z-index: 100;
+  background: var(--deep); color: var(--sand);
+  padding: 11px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  position: relative; z-index: 200;
   border-bottom: 1px solid rgba(196,98,58,0.2);
   flex-shrink: 0;
 }
 .header::before {
-  content: '';
-  position: absolute;
-  inset: 0;
+  content: ''; position: absolute; inset: 0;
   background: radial-gradient(ellipse at 70% 50%, rgba(196,98,58,0.18) 0%, transparent 60%);
   pointer-events: none;
 }
-.header-left { display: flex; align-items: center; gap: 12px; position: relative; }
-.header-flag { font-size: 22px; line-height: 1; }
-.header-title { font-family: 'Playfair Display', serif; font-size: 17px; line-height: 1; }
+.header-left { display: flex; align-items: center; gap: 10px; position: relative; }
+.header-flag { font-size: 20px; line-height: 1; }
+.header-title { font-family: 'Playfair Display', serif; font-size: 16px; line-height: 1; }
 .header-title em { font-style: italic; color: var(--terracotta); }
-.header-sub { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+.header-sub { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
 .header-right { display: flex; align-items: center; gap: 8px; position: relative; }
 
-/* ── LAYOUT ── */
+/* ── DESKTOP LAYOUT ── */
 .app { display: flex; flex-direction: column; height: 100vh; }
 .main { display: grid; grid-template-columns: var(--sidebar-w) 1fr; flex: 1; overflow: hidden; min-height: 0; }
 
-/* ── SIDEBAR ── */
-.sidebar { background: var(--cream); display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
+/* ── SIDEBAR (desktop) ── */
+.sidebar {
+  background: var(--cream); display: flex; flex-direction: column;
+  overflow: hidden; border-right: 1px solid var(--border);
+}
 .sidebar-header {
-  padding: 13px 18px 11px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  background: var(--sand);
+  padding: 13px 18px 11px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; background: var(--sand);
 }
 .sidebar-header h2 { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 400; }
 .sidebar-header p { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
-.days-scroll { overflow-y: auto; flex: 1; }
+.days-scroll { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
 .days-scroll::-webkit-scrollbar { width: 3px; }
 .days-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── MAP ── */
+.map-wrap { position: relative; }
+#map { width: 100%; height: 100%; }
 
 /* ── DAY CARDS ── */
 .day-card { border-bottom: 1px solid var(--border); transition: background 0.15s; }
@@ -78,13 +77,13 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
 .day-header {
   padding: 12px 18px;
   display: flex; align-items: flex-start; gap: 12px;
-  cursor: pointer; user-select: none;
+  cursor: pointer; user-select: none; touch-action: manipulation;
 }
 .day-header:hover { background: rgba(196,98,58,0.04); }
 .day-header:active { background: rgba(196,98,58,0.1); }
 
 .day-num {
-  min-width: 38px; height: 38px; border-radius: 8px;
+  min-width: 40px; height: 40px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   flex-direction: column; line-height: 1.1; flex-shrink: 0;
 }
@@ -94,7 +93,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
 .day-info { flex: 1; min-width: 0; }
 .day-info h3 { font-size: 13px; font-weight: 600; line-height: 1.3; }
 .day-info .date { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
-
 .day-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
 .city-tag {
   display: inline-block; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
@@ -127,7 +125,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
 
 .stop-item {
   display: flex; gap: 10px;
-  padding: 9px 6px 9px 4px;
+  padding: 10px 6px 10px 4px;
   border-bottom: 1px dashed rgba(139,115,85,0.15);
   border-radius: 6px;
 }
@@ -144,9 +142,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
 .stop-line { width: 1px; flex: 1; min-height: 10px; opacity: 0.15; margin-top: 2px; }
 
 .stop-content { flex: 1; min-width: 0; }
-.stop-name { font-size: 12px; font-weight: 600; color: var(--deep); line-height: 1.3; }
-.stop-time { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
-.stop-note { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+.stop-name { font-size: 13px; font-weight: 600; color: var(--deep); line-height: 1.3; }
+.stop-time { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
+.stop-note { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
 .stop-name.hotel { color: var(--teal); }
 .stop-item.hotel-stop .stop-dot-outer { background: var(--teal) !important; border-color: var(--teal) !important; }
 .stop-item.optional-stop { opacity: 0.75; }
@@ -157,7 +155,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
   border: 1px dashed rgba(139,115,85,0.3);
   border-radius: 4px; padding: 2px 6px; margin-top: 4px; font-weight: 600;
 }
-
+.stop-warn {
   display: inline-flex; align-items: center; gap: 3px;
   font-size: 10px; color: #B85C00;
   background: rgba(196,98,58,0.1); border-radius: 4px;
@@ -165,37 +163,137 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
 }
 
 /* ── LINKS ROW ── */
-.stop-links {
-  display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;
-}
+.stop-links { display: flex; gap: 6px; margin-top: 7px; flex-wrap: wrap; }
 .stop-link {
   display: inline-flex; align-items: center; gap: 4px;
-  font-size: 10px; font-weight: 500;
-  padding: 3px 9px; border-radius: 20px;
-  text-decoration: none;
-  border: 1px solid;
-  transition: opacity 0.15s;
-  cursor: pointer;
-  white-space: nowrap;
+  font-size: 11px; font-weight: 500;
+  padding: 5px 11px; border-radius: 20px;
+  text-decoration: none; border: 1px solid;
+  transition: opacity 0.15s; cursor: pointer; white-space: nowrap;
+  touch-action: manipulation;
 }
 .stop-link:hover { opacity: 0.7; }
-.stop-link.maps {
-  color: #1A73E8; border-color: rgba(26,115,232,0.25);
-  background: rgba(26,115,232,0.06);
+.stop-link.maps { color: #1A73E8; border-color: rgba(26,115,232,0.25); background: rgba(26,115,232,0.06); }
+.stop-link.book { color: var(--teal); border-color: rgba(46,125,122,0.25); background: rgba(46,125,122,0.06); }
+.stop-link.info { color: var(--muted); border-color: rgba(139,115,85,0.25); background: rgba(139,115,85,0.06); }
+
+/* ── ADD STOP ── */
+.add-stop-btn {
+  display: flex; align-items: center; gap: 6px;
+  margin: 8px 0 12px;
+  padding: 10px 14px; border-radius: 10px;
+  border: 1px dashed rgba(196,98,58,0.35);
+  background: transparent; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--terracotta);
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s; width: 100%;
+  touch-action: manipulation;
 }
-.stop-link.book {
-  color: var(--teal); border-color: rgba(46,125,122,0.25);
-  background: rgba(46,125,122,0.06);
+.add-stop-btn:hover, .add-stop-btn:active { background: rgba(196,98,58,0.07); }
+
+.add-stop-form { margin: 0 0 12px; display: none; flex-direction: column; gap: 8px; }
+.add-stop-form.open { display: flex; }
+.add-stop-input-row { display: flex; gap: 6px; }
+.add-stop-input {
+  flex: 1; padding: 10px 13px; border-radius: 10px;
+  border: 1px solid rgba(196,98,58,0.25);
+  background: white; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; color: var(--deep); outline: none;
+  -webkit-appearance: none;
 }
-.stop-link.info {
-  color: var(--muted); border-color: rgba(139,115,85,0.25);
-  background: rgba(139,115,85,0.06);
+.add-stop-input:focus { border-color: var(--terracotta); }
+.add-stop-submit {
+  padding: 10px 15px; border-radius: 10px;
+  background: var(--terracotta); color: white;
+  border: none; cursor: pointer; font-size: 13px;
+  font-family: 'DM Sans', sans-serif; font-weight: 600;
+  white-space: nowrap; transition: opacity 0.15s;
+  touch-action: manipulation;
+}
+.add-stop-submit:hover { opacity: 0.85; }
+.add-stop-cancel {
+  padding: 10px 12px; border-radius: 10px;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border); cursor: pointer;
+  font-size: 13px; font-family: 'DM Sans', sans-serif;
+  touch-action: manipulation;
+}
+.add-stop-status { font-size: 12px; padding: 0 2px; min-height: 16px; color: var(--muted); }
+.add-stop-status.success { color: var(--teal); }
+.add-stop-status.error { color: var(--terracotta); }
+.add-stop-coords-row {
+  margin-top: 8px; padding-top: 10px;
+  border-top: 1px dashed rgba(196,98,58,0.15);
+}
+.not-found-guide {
+  background: rgba(212,168,83,0.07);
+  border: 1px solid rgba(212,168,83,0.22);
+  border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
+}
+.not-found-title {
+  font-size: 11px; font-weight: 600; color: var(--deep);
+  margin-bottom: 8px;
+}
+.not-found-options { display: flex; flex-direction: column; gap: 6px; }
+.not-found-opt {
+  display: flex; gap: 8px; align-items: flex-start;
+  font-size: 11px; color: var(--muted); line-height: 1.45;
+}
+.not-found-opt-letter {
+  flex-shrink: 0; width: 17px; height: 17px;
+  background: var(--terracotta); color: white;
+  border-radius: 50%; font-size: 9px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+@media (max-width: 768px) {
+  .not-found-title { font-size: 12px; }
+  .not-found-opt { font-size: 12px; }
+  .not-found-opt-letter { width: 19px; height: 19px; font-size: 10px; }
 }
 
-/* ── MAP ── */
-.map-wrap { position: relative; }
-#map { width: 100%; height: 100%; }
+/* ── CUSTOM STOP ITEMS ── */
+.custom-stop-item {
+  border-bottom: 1px dashed rgba(139,115,85,0.15);
+  padding: 10px 6px 10px 4px;
+  display: flex; gap: 10px;
+  cursor: grab; user-select: none;
+  transition: background 0.1s, opacity 0.15s;
+  border-radius: 6px;
+}
+.custom-stop-item:active { cursor: grabbing; }
+.custom-stop-item.dragging { opacity: 0.4; }
+.custom-stop-item.drag-over { background: rgba(123,94,167,0.06); }
+.custom-stop-item:last-of-type { border-bottom: none; }
 
+.drag-handle {
+  color: var(--muted); opacity: 0.35; font-size: 15px;
+  cursor: grab; padding: 2px 0; flex-shrink: 0;
+  display: flex; align-items: flex-start; padding-top: 4px;
+  touch-action: none;
+}
+.custom-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  color: #7B5EA7; background: rgba(123,94,167,0.1);
+  border: 1px solid rgba(123,94,167,0.2);
+  border-radius: 4px; padding: 2px 6px; margin-top: 3px; font-weight: 600;
+}
+.custom-stop-delete, .stop-delete-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 18px; padding: 0 4px;
+  opacity: 0.4; transition: opacity 0.15s; flex-shrink: 0;
+  align-self: flex-start; margin-top: -1px;
+  touch-action: manipulation; min-width: 32px; min-height: 32px;
+  display: flex; align-items: center; justify-content: center;
+}
+.custom-stop-delete:hover, .stop-delete-btn:hover { opacity: 1; color: var(--terracotta); }
+
+.drag-placeholder { pointer-events: none; }
+body.is-dragging { user-select: none; cursor: grabbing !important; }
+body.is-dragging * { cursor: grabbing !important; }
+
+/* ── MAP LEGEND ── */
 .map-legend {
   position: absolute; bottom: 20px; left: 10px; z-index: 400;
   background: rgba(26,18,8,0.88); backdrop-filter: blur(8px);
@@ -216,10 +314,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
 .leaflet-popup-content { margin: 13px 16px; }
 .popup-title { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--gold); margin-bottom: 3px; }
 .popup-time { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--terracotta); margin-bottom: 6px; }
-.popup-note { font-size: 11px; color: rgba(245,237,216,0.75); line-height: 1.5; max-width: 210px; margin-bottom: 8px; }
+.popup-note { font-size: 11px; color: rgba(245,237,216,0.75); line-height: 1.5; max-width: 220px; margin-bottom: 8px; }
 .popup-links { display: flex; gap: 6px; flex-wrap: wrap; }
 .popup-link {
-  font-size: 10px; padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; padding: 5px 11px; border-radius: 20px;
   text-decoration: none; font-weight: 500;
   border: 1px solid rgba(255,255,255,0.15); color: var(--sand);
   background: rgba(255,255,255,0.08);
@@ -242,6 +340,123 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
 .day-card:nth-child(7) { animation-delay: 0.28s; }
 .day-card:nth-child(8) { animation-delay: 0.32s; }
 .day-card:nth-child(9) { animation-delay: 0.36s; }
+
+/* ══════════════════════════════════════════
+   MOBILE  (≤ 768px)  — bottom-sheet layout
+   ══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Stack vertically: map on top, sheet slides up from bottom */
+  .main {
+    display: block;
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* MAP takes full screen behind the sheet */
+  .map-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  #map { width: 100%; height: 100%; }
+
+  /* BOTTOM SHEET */
+  .sidebar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
+    /* default: peeking state */
+    height: calc(var(--sheet-peek) + 20px);
+    transition: height 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+  .sidebar.sheet-open {
+    height: 75vh;
+  }
+  .sidebar.sheet-full {
+    height: calc(100vh - 56px); /* full minus header */
+  }
+
+  /* Drag pill handle */
+  .sidebar-header {
+    padding: 10px 18px 10px;
+    cursor: pointer;
+    touch-action: manipulation;
+    position: relative;
+    background: var(--sand);
+  }
+  .sidebar-header::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    background: rgba(139,115,85,0.3);
+    border-radius: 2px;
+    margin: 0 auto 10px;
+  }
+  .sidebar-header h2 { font-size: 14px; }
+  .sidebar-header p { display: none; } /* hide hint on mobile, use pill gesture */
+
+  /* Scroll area inside sheet */
+  .days-scroll {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: calc(75vh - 60px);
+  }
+  .sidebar.sheet-full .days-scroll {
+    max-height: calc(100vh - 56px - 60px);
+  }
+
+  /* Day cards: bigger tap targets */
+  .day-header { padding: 14px 16px; gap: 12px; }
+  .day-num { min-width: 44px; height: 44px; }
+  .day-num .n { font-size: 18px; }
+  .day-info h3 { font-size: 14px; }
+  .day-chevron { margin-top: 15px; font-size: 13px; }
+
+  /* Flight badge */
+  .flight-badge { margin: 0 16px 10px; font-size: 11px; }
+
+  /* Stops */
+  .stops-list { padding: 0 16px 16px; }
+  .stop-item { padding: 12px 4px; }
+  .stop-name { font-size: 14px; }
+  .stop-time { font-size: 12px; }
+  .stop-note { font-size: 12px; }
+
+  /* Links — bigger tap targets on mobile */
+  .stop-link { padding: 7px 13px; font-size: 12px; }
+  .stop-links { gap: 7px; margin-top: 9px; }
+
+  /* Add stop button */
+  .add-stop-btn { padding: 13px 16px; font-size: 14px; border-radius: 12px; }
+  .add-stop-form { margin: 0 0 16px; }
+  .add-stop-input { font-size: 16px; padding: 12px 14px; } /* 16px prevents iOS zoom */
+  .add-stop-submit { padding: 12px 16px; font-size: 14px; }
+  .add-stop-cancel { padding: 12px 14px; font-size: 14px; }
+  .add-stop-status { font-size: 13px; }
+
+  /* Legend repositioned above bottom sheet peek */
+  .map-legend {
+    bottom: calc(var(--sheet-peek) + 30px);
+    left: 10px;
+  }
+
+  /* Larger popup links on mobile */
+  .popup-link { padding: 7px 13px; font-size: 12px; }
+
+  /* Delete buttons: bigger hit area */
+  .custom-stop-delete, .stop-delete-btn {
+    font-size: 20px; min-width: 36px; min-height: 36px;
+  }
+
+  /* Drag handle: larger */
+  .drag-handle { font-size: 18px; padding-top: 6px; }
+}
 </style>
 </head>
 <body>
@@ -262,10 +477,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
   <div class="main">
 
     <!-- SIDEBAR -->
-    <div class="sidebar">
-      <div class="sidebar-header">
+    <div class="sidebar" id="bottom-sheet">
+      <div class="sidebar-header" onclick="toggleSheet()">
         <h2>Daily Itinerary</h2>
-        <p>Click a day · Click a stop to zoom map</p>
+        <p>Tap a day · tap a stop to zoom map</p>
       </div>
       <div class="days-scroll">
         <div id="days-container"></div>
@@ -467,8 +682,8 @@ const DAYS = [
         ]
       },
       {
-        name: "Pigeon Valley", lat: 38.6380, lng: 34.8150, time: "15:00",
-        note: "Walking path between Üçhisar and Göreme (~3 km, ~1 hr easy walk). Named for the thousands of dovecotes carved into the cliffs. Ends back near hotel.",
+        name: "Pigeon Valley", lat: 38.6380, lng: 34.8150, time: "15:30",
+        note: "Short taxi ride from Üçhisar Castle (~5 min). Named for thousands of dovecotes carved into the cliffs. Stroll the viewpoint at a leisurely pace — no hiking needed!",
         warn: null,
         links: [
           { label: "📍 Maps", url: "https://maps.google.com/?q=Pigeon+Valley+Cappadocia", type: "maps" }
@@ -721,15 +936,18 @@ DAYS.forEach(day => {
     ? `<div class="flight-badge">${flightLines.map(l => `<div>${l}</div>`).join('')}</div>` : '';
 
   const stopsHtml = day.stops.map((s, si) => {
-    const isLast = si === day.stops.length - 1;
+    const dotStyle = `border-color:${s.isHotel ? '#2E7D7A' : day.color};${(si===0||s.isHotel)?`background:${s.isHotel?'#2E7D7A':day.color}`:''}`;
     const linksHtml = s.links.map(l =>
       `<a class="stop-link ${l.type}" href="${l.url}" target="_blank" onclick="event.stopPropagation()">${l.label}</a>`
     ).join('');
     return `
-    <div class="stop-item${s.isHotel ? ' hotel-stop' : ''}${s.optional ? ' optional-stop' : ''}" onclick="flyToStop(${s.lat},${s.lng},${day.day})">
+    <div class="stop-item draggable-stop${s.isHotel ? ' hotel-stop' : ''}${s.optional ? ' optional-stop' : ''}"
+         data-type="builtin" data-day="${day.day}" data-idx="${si}"
+         onclick="flyToStop(${s.lat},${s.lng},${day.day})">
+      <div class="drag-handle" title="Drag to reorder">⠿</div>
       <div class="stop-timeline">
-        <div class="stop-dot-outer" style="border-color:${s.isHotel ? '#2E7D7A' : day.color};${(si===0||s.isHotel)?`background:${s.isHotel?'#2E7D7A':day.color}`:''}"></div>
-        ${!isLast ? `<div class="stop-line" style="background:${day.color}"></div>` : ''}
+        <div class="stop-dot-outer" style="${dotStyle}"></div>
+        <div class="stop-line" style="background:${day.color}"></div>
       </div>
       <div class="stop-content">
         <div class="stop-name${s.isHotel?' hotel':''}">${s.name}</div>
@@ -739,6 +957,7 @@ DAYS.forEach(day => {
         ${s.warn ? `<div class="stop-warn">⚠️ ${s.warn}</div>` : ''}
         <div class="stop-links">${linksHtml}</div>
       </div>
+      <button class="stop-delete-btn" onclick="event.stopPropagation();hideBuiltinStop(this)" title="Hide stop">✕</button>
     </div>`;
   }).join('');
 
@@ -759,12 +978,80 @@ DAYS.forEach(day => {
       <div class="day-chevron">▾</div>
     </div>
     ${flightHtml}
-    <div class="stops-list">${stopsHtml}</div>
+    <div class="stops-list" id="stops-list-${day.day}">
+      ${stopsHtml}
+      <button class="add-stop-btn" onclick="openAddStop(${day.day})">＋ Add a stop</button>
+      <div class="add-stop-form" id="add-stop-form-${day.day}">
+        <div class="add-stop-input-row">
+          <input class="add-stop-input" id="add-stop-input-${day.day}" 
+            placeholder="Place name  or paste a Google Maps URL"
+            onkeydown="if(event.key==='Enter') submitAddStop(${day.day})"/>
+          <button class="add-stop-submit" id="add-stop-btn-${day.day}" onclick="submitAddStop(${day.day})">＋ Add</button>
+          <button class="add-stop-cancel" onclick="closeAddStop(${day.day})">✕</button>
+        </div>
+        <div class="add-stop-status" id="add-stop-status-${day.day}"></div>
+        <div class="add-stop-coords-row" id="add-stop-coords-row-${day.day}" style="display:none;">
+          <div class="not-found-guide">
+            <div class="not-found-title">📍 Not found in <strong>${day.city}</strong></div>
+            <div class="not-found-options">
+              <div class="not-found-opt">
+                <span class="not-found-opt-letter">A</span>
+                <span>Copy the <strong>full Google Maps URL</strong> from your browser address bar and paste below</span>
+              </div>
+              <div class="not-found-opt">
+                <span class="not-found-opt-letter">B</span>
+                <span>In Google Maps, <strong>long-press</strong> on the spot → tap the coordinates → <strong>Copy coordinates</strong> → paste below</span>
+              </div>
+            </div>
+          </div>
+          <div class="add-stop-input-row" style="margin-top:8px;">
+            <input class="add-stop-input" id="add-stop-coords-${day.day}" 
+              placeholder="Full Maps URL  or  41.0067, 28.9724"
+              onkeydown="if(event.key==='Enter') submitWithCoords(${day.day})"/>
+            <button class="add-stop-submit" onclick="submitWithCoords(${day.day})">Pin it</button>
+          </div>
+        </div>
+      </div>
+    </div>
   `;
   container.appendChild(card);
+  // Attach drag to all built-in stops
+  card.querySelectorAll('.draggable-stop').forEach(el => initDrag(el, day.day));
 });
 
 // ── INTERACTIONS ──────────────────────────────────────────────────────────
+
+// ── Mobile bottom sheet ───────────────────────────────────────────────────
+const isMobile = () => window.innerWidth <= 768;
+let sheetState = 'peek'; // 'peek' | 'open' | 'full'
+
+function toggleSheet() {
+  if (!isMobile()) return;
+  const sheet = document.getElementById('bottom-sheet');
+  if (sheetState === 'peek') {
+    sheetState = 'open';
+    sheet.classList.add('sheet-open');
+    sheet.classList.remove('sheet-full');
+  } else if (sheetState === 'open') {
+    sheetState = 'full';
+    sheet.classList.add('sheet-open', 'sheet-full');
+  } else {
+    sheetState = 'peek';
+    sheet.classList.remove('sheet-open', 'sheet-full');
+  }
+}
+
+// When user taps a day on mobile, open sheet to 'open' state automatically
+function ensureSheetOpen() {
+  if (!isMobile()) return;
+  const sheet = document.getElementById('bottom-sheet');
+  if (sheetState === 'peek') {
+    sheetState = 'open';
+    sheet.classList.add('sheet-open');
+    sheet.classList.remove('sheet-full');
+  }
+}
+
 let activeDay = null;
 
 function toggleDay(dayNum) {
@@ -777,6 +1064,7 @@ function toggleDay(dayNum) {
     allMarkers.forEach(({ marker }) => marker.setOpacity(1));
     return;
   }
+  ensureSheetOpen();
   if (activeDay !== null) document.getElementById(`day-card-${activeDay}`)?.classList.remove('active');
   card.classList.add('active');
   activeDay = dayNum;
@@ -797,6 +1085,602 @@ function flyToStop(lat, lng, dayNum) {
   const found = allMarkers.find(m => Math.abs(m.stop.lat - lat) < 0.0001 && m.day === dayNum);
   if (found) found.marker.openPopup();
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// CUSTOM STOPS — geocode · map pin · dotted polyline · transport note · drag
+// ══════════════════════════════════════════════════════════════════════════
+const CUSTOM_COLOR = '#7B5EA7';
+const customMapData = {}; // dayNum → { marker, polyline }[]
+
+// ── Storage ───────────────────────────────────────────────────────────────
+function loadCustomStops() {
+  try { return JSON.parse(localStorage.getItem('turkey_custom_stops') || '{}'); }
+  catch { return {}; }
+}
+function saveCustomStops(data) {
+  localStorage.setItem('turkey_custom_stops', JSON.stringify(data));
+}
+
+// ── Map helpers ───────────────────────────────────────────────────────────
+function makeCustomIcon() {
+  return L.divIcon({
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
+      <path d="M14 2C7.4 2 2 7.4 2 14c0 8 12 22 12 22s12-14 12-22C26 7.4 20.6 2 14 2z"
+        fill="${CUSTOM_COLOR}" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.35))"/>
+      <circle cx="14" cy="14" r="6" fill="white" opacity="0.92"/>
+      <text x="14" y="18" text-anchor="middle" font-size="9" fill="${CUSTOM_COLOR}">✦</text>
+    </svg>`,
+    iconSize: [28, 36], iconAnchor: [14, 36], popupAnchor: [0, -38], className: ''
+  });
+}
+
+// Build coord+name list by reading the ACTUAL DOM order of stops in the list
+function getOrderedStopCoords(dayNum) {
+  const stopsList = document.getElementById(`stops-list-${dayNum}`);
+  if (!stopsList) return [];
+  const day = DAYS.find(d => d.day === dayNum);
+  const customData = loadCustomStops();
+  const customs = {};
+  (customData[dayNum] || []).forEach(s => { customs[s.id] = s; });
+
+  const results = [];
+  stopsList.querySelectorAll('.draggable-stop').forEach(el => {
+    if (el.style.display === 'none') return; // skip hidden stops
+    if (el.dataset.type === 'builtin') {
+      const idx = parseInt(el.dataset.idx);
+      if (day && day.stops[idx]) {
+        const s = day.stops[idx];
+        results.push({ lat: s.lat, lng: s.lng, name: s.name, type: 'builtin' });
+      }
+    } else if (el.dataset.type === 'custom') {
+      const s = customs[el.dataset.id];
+      if (s && s.lat && s.lng) {
+        results.push({ lat: s.lat, lng: s.lng, name: s.name, id: s.id, type: 'custom', el });
+      }
+    }
+  });
+  return results;
+}
+
+function redrawCustomPolylines(dayNum) {
+  // Remove old custom polylines for this day
+  if (!customMapData[dayNum]) customMapData[dayNum] = [];
+  customMapData[dayNum].forEach(d => { if (d.polyline) map.removeLayer(d.polyline); });
+  customMapData[dayNum] = customMapData[dayNum].filter(d => d.marker);
+
+  // Also update the built-in polyline for this day to include custom stops in order
+  const dayPoly = allPolylines.find(p => p.day === dayNum);
+  const ordered = getOrderedStopCoords(dayNum);
+  if (ordered.length < 2) return;
+
+  const coords = ordered.map(s => [s.lat, s.lng]);
+
+  // Update the built-in day polyline to reflect new full route
+  if (dayPoly) {
+    dayPoly.poly.setLatLngs(coords);
+  } else {
+    // Create a new polyline if none exists (e.g. day had only 1 stop)
+    const day = DAYS.find(d => d.day === dayNum);
+    const color = day ? day.color : CUSTOM_COLOR;
+    const poly = L.polyline(coords, { color, weight: 2.5, opacity: 0.7, dashArray: '5,5' }).addTo(map);
+    allPolylines.push({ poly, day: dayNum });
+  }
+
+  // Update transport note on each custom stop based on its actual predecessor in DOM order
+  for (let i = 0; i < ordered.length; i++) {
+    const s = ordered[i];
+    if (s.type !== 'custom' || !s.el) continue;
+    const prev = ordered[i - 1];
+    let transportText = '';
+    if (prev) {
+      const dist = Math.round(calcDistKm(prev.lat, prev.lng, s.lat, s.lng) * 10) / 10;
+      const prevShortName = prev.name.split(/[,(]/)[0].trim();
+      transportText = `~${dist} km from ${prevShortName} · taxi or walk`;
+    }
+    // Update the transport line in the sidebar card
+    const transportEl = s.el.querySelector('.custom-transport-note');
+    if (transportEl) {
+      transportEl.textContent = transportText ? `🚶 ${transportText}` : '';
+      transportEl.style.display = transportText ? '' : 'none';
+    }
+    // Update in localStorage too
+    const data = loadCustomStops();
+    const entry = (data[dayNum] || []).find(c => c.id === s.id);
+    if (entry) {
+      entry.transport = transportText;
+      saveCustomStops(data);
+    }
+  }
+}
+
+function addCustomMarkerToMap(dayNum, stop) {
+  if (!stop.lat || !stop.lng) return;
+  if (!customMapData[dayNum]) customMapData[dayNum] = [];
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name)}`;
+  const marker = L.marker([stop.lat, stop.lng], { icon: makeCustomIcon() })
+    .addTo(map)
+    .bindPopup(`
+      <div class="popup-title">${stop.name}</div>
+      <div class="popup-time">Day ${dayNum} · Custom Stop · ✦</div>
+      <div class="popup-note">${stop.transport || 'Custom stop added by you.'}</div>
+      <div class="popup-links">
+        <a class="popup-link" href="${mapsUrl}" target="_blank">📍 Google Maps</a>
+      </div>
+    `, { maxWidth: 270 });
+  customMapData[dayNum].push({ marker, id: stop.id });
+}
+
+function removeCustomMarkerFromMap(dayNum, stopId) {
+  if (!customMapData[dayNum]) return;
+  const idx = customMapData[dayNum].findIndex(d => d.id === stopId);
+  if (idx !== -1) {
+    if (customMapData[dayNum][idx].marker) map.removeLayer(customMapData[dayNum][idx].marker);
+    customMapData[dayNum].splice(idx, 1);
+  }
+}
+
+// ── Sidebar render ────────────────────────────────────────────────────────
+function renderCustomStop(dayNum, stop) {
+  const stopsList = document.getElementById(`stops-list-${dayNum}`);
+  if (!stopsList) return;
+  const addBtn = stopsList.querySelector('.add-stop-btn');
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name)}`;
+
+  const div = document.createElement('div');
+  div.className = 'custom-stop-item draggable-stop';
+  div.id = `custom-stop-${stop.id}`;
+  div.dataset.id = stop.id;
+  div.dataset.day = String(dayNum);
+  div.dataset.type = 'custom';
+  div.innerHTML = `
+    <div class="drag-handle" title="Drag to reorder">⠿</div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding-top:5px;width:14px;flex-shrink:0;">
+      <div style="width:10px;height:10px;border-radius:50%;background:${CUSTOM_COLOR};border:2px solid white;box-shadow:0 0 0 1.5px ${CUSTOM_COLOR};flex-shrink:0;"></div>
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:12px;font-weight:600;color:${CUSTOM_COLOR};line-height:1.4;">${stop.name}</div>
+      ${stop.transport ? `<div class="custom-transport-note" style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.5;">🚶 ${stop.transport}</div>` : `<div class="custom-transport-note" style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.5;display:none;"></div>`}
+      <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">
+        <span class="custom-badge">✦ Custom</span>
+        <a href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()"
+           style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;color:#1A73E8;border:1px solid rgba(26,115,232,0.25);background:rgba(26,115,232,0.06);">📍 Maps</a>
+        ${!stop.lat ? `<span style="font-size:9px;color:var(--muted);opacity:0.7;">📍 not on map</span>` : ''}
+      </div>
+    </div>
+    <button class="custom-stop-delete" onclick="event.stopPropagation();deleteCustomStop(${dayNum},'${stop.id}')" title="Remove">✕</button>
+  `;
+  div.addEventListener('click', (e) => {
+    if (e.target.closest('button') || e.target.closest('a')) return;
+    if (stop.lat && stop.lng) {
+      map.setView([stop.lat, stop.lng], 15, { animate: true, duration: 0.6 });
+      const entry = (customMapData[dayNum] || []).find(d => d.id === stop.id);
+      if (entry && entry.marker) entry.marker.openPopup();
+    }
+  });
+
+  if (addBtn) stopsList.insertBefore(div, addBtn);
+  else stopsList.appendChild(div);
+
+  initDrag(div, dayNum);
+}
+
+// ── Universal drag — works for ALL .draggable-stop elements ───────────────
+function initDrag(el, dayNum) {
+  const handle = el.querySelector('.drag-handle');
+  if (!handle) return;
+
+  handle.addEventListener('mousedown', (e) => { e.preventDefault(); startDrag(e); });
+  handle.addEventListener('touchstart', (e) => startDrag(e.touches[0]), { passive: true });
+
+  function startDrag(e) {
+    const stopsList = document.getElementById(`stops-list-${dayNum}`);
+    if (!stopsList) return;
+
+    const rect = el.getBoundingClientRect();
+    const startY = e.clientY;
+    const offsetY = e.clientY - rect.top;
+
+    // Ghost: fixed-positioned floating copy
+    const ghost = el.cloneNode(true);
+    ghost.style.cssText = `
+      position:fixed; left:${rect.left}px; top:${rect.top}px;
+      width:${rect.width}px; pointer-events:none; z-index:99999;
+      opacity:0.93; background:#FAF6EE;
+      box-shadow:0 10px 32px rgba(0,0,0,0.28); border-radius:10px;
+      user-select:none;
+    `;
+    document.body.appendChild(ghost);
+
+    // Placeholder in the list
+    const ph = document.createElement('div');
+    ph.className = 'drag-placeholder';
+    ph.style.cssText = `height:${rect.height}px; background:rgba(123,94,167,0.09);
+      border:2px dashed rgba(123,94,167,0.5); border-radius:8px; margin:2px 0;`;
+    el.style.opacity = '0.15';
+
+    function getStops() {
+      return [...stopsList.querySelectorAll('.draggable-stop')].filter(s => s !== el);
+    }
+
+    function updatePosition(clientY) {
+      ghost.style.top = `${clientY - offsetY}px`;
+
+      const ghostMid = clientY - offsetY + rect.height / 2;
+      const siblings = getStops();
+      let inserted = false;
+
+      for (const sib of siblings) {
+        const r = sib.getBoundingClientRect();
+        if (ghostMid < r.top + r.height / 2) {
+          if (ph.nextSibling !== sib) sib.parentNode.insertBefore(ph, sib);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) {
+        const addBtn = stopsList.querySelector('.add-stop-btn');
+        if (ph.nextSibling !== addBtn) stopsList.insertBefore(ph, addBtn);
+      }
+    }
+
+    // Insert placeholder after el initially
+    el.after(ph);
+    updatePosition(startY);
+
+    function onMouseMove(ev) { updatePosition(ev.clientY); }
+    function onTouchMove(ev) { updatePosition(ev.touches[0].clientY); }
+
+    function onEnd() {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onEnd);
+      document.body.classList.remove('is-dragging');
+      ghost.remove();
+      el.style.opacity = '';
+      ph.replaceWith(el);
+
+      // Save full interleaved order: [{type:'builtin',idx:N} | {type:'custom',id:'...'}]
+      const allStops = [...stopsList.querySelectorAll('.draggable-stop')];
+      const fullOrder = allStops.map(s => s.dataset.type === 'custom'
+        ? { type: 'custom', id: s.dataset.id }
+        : { type: 'builtin', idx: parseInt(s.dataset.idx) }
+      );
+      const data = loadCustomStops();
+      if (!data[dayNum]) data[dayNum] = [];
+      // Also re-save custom stops array in their new order
+      const customInOrder = allStops
+        .filter(s => s.dataset.type === 'custom')
+        .map(s => (data[dayNum] || []).find(c => c.id === s.dataset.id))
+        .filter(Boolean);
+      data[dayNum] = customInOrder;
+      data[`order_${dayNum}`] = fullOrder;
+      saveCustomStops(data);
+
+      redrawCustomPolylines(dayNum);
+    }
+
+    document.body.classList.add('is-dragging');
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
+    document.addEventListener('touchend', onEnd);
+  }
+}
+
+// Hide a built-in stop (soft delete — just visually removes it, triggers route redraw)
+function hideBuiltinStop(btn) {
+  const el = btn.closest('.draggable-stop');
+  const dayNum = parseInt(el.dataset.day);
+  el.style.display = 'none';
+  redrawCustomPolylines(dayNum);
+}
+
+// ── Add / delete ──────────────────────────────────────────────────────────
+function openAddStop(dayNum) {
+  const card = document.getElementById(`day-card-${dayNum}`);
+  if (!card.classList.contains('active')) toggleDay(dayNum);
+  const form = document.getElementById(`add-stop-form-${dayNum}`);
+  form.classList.add('open');
+  setTimeout(() => document.getElementById(`add-stop-input-${dayNum}`).focus(), 60);
+}
+
+function closeAddStop(dayNum) {
+  document.getElementById(`add-stop-form-${dayNum}`).classList.remove('open');
+  const inp = document.getElementById(`add-stop-input-${dayNum}`);
+  if (inp) inp.value = '';
+  const coords = document.getElementById(`add-stop-coords-${dayNum}`);
+  if (coords) coords.value = '';
+  const status = document.getElementById(`add-stop-status-${dayNum}`);
+  if (status) { status.textContent = ''; status.className = 'add-stop-status'; }
+  const btn = document.getElementById(`add-stop-btn-${dayNum}`);
+  if (btn) { btn.textContent = '＋ Add'; btn.disabled = false; }
+  const coordsRow = document.getElementById(`add-stop-coords-row-${dayNum}`);
+  if (coordsRow) coordsRow.style.display = 'none';
+}
+
+// Detect if text is a Google Maps short URL
+function isShortMapsUrl(text) {
+  return /maps\.app\.goo\.gl|goo\.gl\/maps/i.test(text);
+}
+
+// Parse coords from "lat, lng" string OR a Google Maps URL
+function parseCoordsFromInput(text) {
+  text = text.trim();
+  // All Google Maps URL formats:
+  // !3d41.006749!4d28.9724282  (most reliable — embedded in place URLs)
+  // @41.006749,28.9724282
+  // q=41.006749,28.9724282
+  // ll=41.006749,28.9724282
+  const patterns = [
+    /!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/,
+    /@(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/,
+    /\/(-?\d+\.\d+),(-?\d+\.\d+)(?:,|\?|$)/,
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m) {
+      const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+      // Sanity check: valid lat/lng range
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return { lat, lng };
+      }
+    }
+  }
+  // Plain "lat, lng" or "lat lng"
+  const m = text.match(/^(-?\d+\.?\d*)\s*[,\s]\s*(-?\d+\.?\d*)$/);
+  if (m) {
+    const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng };
+  }
+  return null;
+}
+
+// Is this coordinate inside Turkey?
+function inTurkey(lat, lng) {
+  return lat >= 35.5 && lat <= 42.5 && lng >= 25.5 && lng <= 45;
+}
+
+// City context per day number
+const DAY_CITY_CONTEXT = {
+  1: 'Istanbul', 2: 'Istanbul', 3: 'Istanbul',
+  4: 'Cappadocia', 5: 'Cappadocia',
+  6: 'Antalya', 7: 'Antalya', 8: 'Antalya', 9: 'Antalya'
+};
+
+// Try multiple geocoding sources — ONLY return results inside Turkey
+async function geocodePlace(name, dayNum) {
+  const city = DAY_CITY_CONTEXT[dayNum] || 'Turkey';
+  // Build queries: most specific first (city), then fallback to all Turkey
+  const queries = [
+    `${name}, ${city}, Turkey`,
+    `${name}, Turkey`,
+  ];
+  // Add neighbouring city fallbacks
+  if (city === 'Istanbul') queries.push(`${name}, Beyoğlu, Turkey`, `${name}, Sultanahmet, Turkey`);
+  if (city === 'Cappadocia') queries.push(`${name}, Göreme, Turkey`, `${name}, Nevşehir, Turkey`);
+  if (city === 'Antalya') queries.push(`${name}, Kaleiçi, Turkey`, `${name}, Lara, Antalya, Turkey`);
+
+  for (const q of queries) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&countrycodes=tr`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const results = await res.json();
+      // STRICT: only accept results provably inside Turkey
+      const pick = results.find(r => inTurkey(parseFloat(r.lat), parseFloat(r.lon)));
+      if (pick) return {
+        lat: parseFloat(pick.lat), lng: parseFloat(pick.lon),
+        shortAddr: pick.display_name.split(',').slice(0, 3).join(','),
+      };
+    } catch(e) {}
+  }
+  return null; // Nothing found — show manual fallback
+}
+
+function buildTransportNote(dayNum, lat, lng) {
+  const day = DAYS.find(d => d.day === dayNum);
+  const data = loadCustomStops();
+  const prevCustoms = (data[dayNum] || []);
+  const prevStop = prevCustoms.length > 0 && prevCustoms[prevCustoms.length-1].lat
+    ? prevCustoms[prevCustoms.length-1]
+    : (day && day.stops.length > 0 ? day.stops[day.stops.length-1] : null);
+  if (!prevStop) return '';
+  const dist = Math.round(calcDistKm(prevStop.lat, prevStop.lng, lat, lng) * 10) / 10;
+  return `~${dist} km from ${prevStop.name.split(/[,(]/)[0].trim()} · taxi or walk`;
+}
+
+function finaliseStop(dayNum, name, lat, lng, shortAddr) {
+  const transport = (lat && lng) ? buildTransportNote(dayNum, lat, lng) : '';
+  const stop = { id: Date.now().toString(), name, lat, lng, shortAddr, transport };
+  const data = loadCustomStops();
+  if (!data[dayNum]) data[dayNum] = [];
+  data[dayNum].push(stop);
+  saveCustomStops(data);
+  renderCustomStop(dayNum, stop);
+  if (lat && lng) {
+    addCustomMarkerToMap(dayNum, stop);
+    redrawCustomPolylines(dayNum);
+    map.setView([lat, lng], 15, { animate: true, duration: 0.7 });
+  }
+  return stop;
+}
+
+async function submitAddStop(dayNum) {
+  const inp = document.getElementById(`add-stop-input-${dayNum}`);
+  const btn = document.getElementById(`add-stop-btn-${dayNum}`);
+  const status = document.getElementById(`add-stop-status-${dayNum}`);
+  const coordsRow = document.getElementById(`add-stop-coords-row-${dayNum}`);
+  let text = inp ? inp.value.trim() : '';
+  if (!text) return;
+
+  // If it's a short URL, tell user to use the full URL instead
+  if (isShortMapsUrl(text)) {
+    if (status) { status.className = 'add-stop-status error'; status.textContent = '⚠️ Short links don\'t work — paste the full URL from the address bar instead.'; }
+    if (coordsRow) coordsRow.style.display = 'block';
+    return;
+  }
+
+  // Check if they pasted a full Google Maps URL or plain coords
+  const directCoords = parseCoordsFromInput(text);
+  if (directCoords) {
+    // Try to extract a human-readable name from the URL (e.g. /place/Hidden+Garden+...)
+    let placeName = inp ? inp.value.trim() : 'Custom Stop';
+    const placeMatch = text.match(/\/place\/([^/@]+)/);
+    if (placeMatch) placeName = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+    if (status) { status.className = 'add-stop-status success'; status.textContent = `📍 Pinning: ${placeName}`; }
+    finaliseStop(dayNum, placeName, directCoords.lat, directCoords.lng,
+      `${directCoords.lat.toFixed(5)}, ${directCoords.lng.toFixed(5)}`);
+    setTimeout(() => closeAddStop(dayNum), 1200);
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  if (status) { status.className = 'add-stop-status'; status.textContent = '🔍 Searching…'; }
+
+  const geo = await geocodePlace(text, dayNum);
+
+  if (geo) {
+    finaliseStop(dayNum, text, geo.lat, geo.lng, geo.shortAddr);
+    if (status) { status.className = 'add-stop-status success'; status.textContent = `✓ Found · ${geo.shortAddr.split(',')[0]}`; }
+    setTimeout(() => closeAddStop(dayNum), 1400);
+  } else {
+    // Not found — show the coords fallback
+    if (btn) { btn.disabled = false; btn.textContent = '＋ Add'; }
+    if (status) {
+      status.className = 'add-stop-status error';
+      status.textContent = `⚠️ "${text}" not found automatically.`;
+    }
+    if (coordsRow) coordsRow.style.display = 'block';
+    if (gmapsLink) {
+      gmapsLink.href = `https://www.google.com/maps/search/${encodeURIComponent(text)}+istanbul`;
+    }
+    // Still add to list without coords so name is saved
+    // (user can pin it via coords row)
+  }
+}
+
+async function submitWithCoords(dayNum) {
+  const inp = document.getElementById(`add-stop-input-${dayNum}`);
+  const coordsInp = document.getElementById(`add-stop-coords-${dayNum}`);
+  const status = document.getElementById(`add-stop-status-${dayNum}`);
+  const name = inp ? inp.value.trim() : 'Custom Stop';
+  let coordText = coordsInp ? coordsInp.value.trim() : '';
+  if (!coordText) {
+    if (status) { status.className = 'add-stop-status error'; status.textContent = '⚠️ Please paste a full Maps URL or coordinates.'; }
+    return;
+  }
+
+  // Reject short URLs clearly
+  if (isShortMapsUrl(coordText)) {
+    if (status) { status.className = 'add-stop-status error'; status.textContent = '⚠️ Short links don\'t work — use the full URL from the address bar, or paste coordinates.'; }
+    return;
+  }
+
+  // 1. Try parsing as coords or full Google Maps URL
+  const parsed = parseCoordsFromInput(coordText);
+  if (parsed) {
+    finaliseStop(dayNum, name, parsed.lat, parsed.lng,
+      `${parsed.lat.toFixed(5)}, ${parsed.lng.toFixed(5)}`);
+    if (status) { status.className = 'add-stop-status success'; status.textContent = `✓ Pinned on map!`; }
+    setTimeout(() => closeAddStop(dayNum), 1200);
+    return;
+  }
+
+  // 2. Treat it as an address — geocode it
+  if (status) { status.className = 'add-stop-status'; status.textContent = '🔍 Looking up address…'; }
+  try {
+    const city = DAY_CITY_CONTEXT[dayNum] || 'Turkey';
+    // Try with city appended, then raw
+    const queries = [`${coordText}, ${city}, Turkey`, `${coordText}, Turkey`, coordText];
+    let geo = null;
+    for (const q of queries) {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&countrycodes=tr`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const results = await res.json();
+      const pick = results.find(r => inTurkey(parseFloat(r.lat), parseFloat(r.lon)));
+      if (pick) { geo = pick; break; }
+    }
+    if (geo) {
+      const lat = parseFloat(geo.lat), lng = parseFloat(geo.lon);
+      const shortAddr = geo.display_name.split(',').slice(0, 3).join(',');
+      finaliseStop(dayNum, name, lat, lng, shortAddr);
+      if (status) { status.className = 'add-stop-status success'; status.textContent = `✓ Found · ${shortAddr.split(',')[0]}`; }
+      setTimeout(() => closeAddStop(dayNum), 1400);
+      return;
+    }
+  } catch(e) {}
+
+  if (status) { status.className = 'add-stop-status error'; status.textContent = '⚠️ Could not find that address. Try a Google Maps share link or coordinates.'; }
+}
+
+function deleteCustomStop(dayNum, stopId) {
+  document.getElementById(`custom-stop-${stopId}`)?.remove();
+  removeCustomMarkerFromMap(dayNum, stopId);
+  const data = loadCustomStops();
+  if (data[dayNum]) {
+    data[dayNum] = data[dayNum].filter(s => s.id !== stopId);
+    saveCustomStops(data);
+  }
+  redrawCustomPolylines(dayNum);
+}
+
+// ── Haversine distance ────────────────────────────────────────────────────
+function calcDistKm(lat1, lng1, lat2, lng2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ── Init on page load ─────────────────────────────────────────────────────
+(function initCustomStops() {
+  const data = loadCustomStops();
+
+  // First pass: add all custom stops and markers
+  Object.entries(data).forEach(([key, val]) => {
+    if (key.startsWith('order_')) return; // skip order keys
+    const dayNum = parseInt(key);
+    val.forEach(stop => {
+      renderCustomStop(dayNum, stop);
+      if (stop.lat && stop.lng) addCustomMarkerToMap(dayNum, stop);
+    });
+  });
+
+  // Second pass: restore saved interleaved order for each day
+  Object.entries(data).forEach(([key, order]) => {
+    if (!key.startsWith('order_')) return;
+    const dayNum = parseInt(key.replace('order_', ''));
+    const stopsList = document.getElementById(`stops-list-${dayNum}`);
+    if (!stopsList) return;
+    const addBtn = stopsList.querySelector('.add-stop-btn');
+    const addForm = stopsList.querySelector('.add-stop-form');
+
+    // Rebuild the stop list in saved order
+    order.forEach(entry => {
+      let el;
+      if (entry.type === 'builtin') {
+        el = stopsList.querySelector(`.draggable-stop[data-type="builtin"][data-idx="${entry.idx}"]`);
+      } else {
+        el = document.getElementById(`custom-stop-${entry.id}`);
+      }
+      if (el) stopsList.insertBefore(el, addBtn);
+    });
+  });
+
+  // Third pass: redraw polylines for all days that have custom stops
+  const dayNums = new Set(
+    Object.keys(data)
+      .filter(k => !k.startsWith('order_'))
+      .map(k => parseInt(k))
+  );
+  dayNums.forEach(dayNum => redrawCustomPolylines(dayNum));
+})();
+
+
 </script>
 </body>
 </html>
