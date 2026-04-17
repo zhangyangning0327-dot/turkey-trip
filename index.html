@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Turkey 2025 · Cecilia's Trip</title>
+<title>Turkey 2026 · Cecilia's Trip</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
@@ -46,6 +46,16 @@ body { font-family: 'DM Sans', sans-serif; background: var(--deep); color: var(-
 .header-title em { font-style: italic; color: var(--terracotta); }
 .header-sub { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
 .header-right { display: flex; align-items: center; gap: 8px; position: relative; }
+
+.lang-toggle { display:flex; gap:4px; }
+.lang-btn {
+  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  border: 1px solid rgba(196,98,58,0.4); background: transparent;
+  color: var(--sand); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.lang-btn.active { background: var(--terracotta); border-color: var(--terracotta); color: var(--sand); }
+.lang-btn:hover:not(.active) { background: rgba(196,98,58,0.2); }
 
 /* ── DESKTOP LAYOUT ── */
 .app { display: flex; flex-direction: column; height: 100vh; }
@@ -468,8 +478,15 @@ body.is-dragging * { cursor: grabbing !important; }
       <span class="header-flag">🇹🇷</span>
       <div>
         <div class="header-title">9 Days in <em>Turkey</em></div>
-        <div class="header-sub">Apr 24 – May 2 · Cecilia's Trip</div>
+        <div class="header-sub">Apr 24 – May 2, 2026 · Cecilia's Trip</div>
       </div>
+    </div>
+    <div class="header-right">
+      <div class="lang-toggle">
+        <button id="btn-en" class="lang-btn active" onclick="switchLang('en')">EN</button>
+        <button id="btn-zh" class="lang-btn" onclick="switchLang('zh')">中文</button>
+      </div>
+      <script>(function(){var l=localStorage.getItem('turkey_lang');if(l==='zh'){document.getElementById('btn-en').className='lang-btn';document.getElementById('btn-zh').className='lang-btn active';}})()</script>
     </div>
   </div>
 
@@ -503,18 +520,105 @@ body.is-dragging * { cursor: grabbing !important; }
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────
-// weather: icon, temp range, short condition note for each day
+// weather: pre-loaded Apr/May 2026 forecast — shown instantly & used as fallback
+// if live API is unreachable (e.g. network restrictions). Live fetch will
+// overwrite these values if it succeeds.
 const WEATHER = {
-  1:  { icon: "🌤️", temp: "16–21°C", note: "Partly cloudy, mild" },
-  2:  { icon: "⛅", temp: "15–20°C", note: "Cloudy spells, comfortable" },
-  3:  { icon: "🌥️", temp: "14–19°C", note: "Overcast, light breeze" },
-  4:  { icon: "☀️", temp: "10–18°C", note: "Sunny · Cold at dawn" },
-  5:  { icon: "🌄", temp: "8–19°C",  note: "Clear skies · 5am: ~8°C!" },
-  6:  { icon: "☀️", temp: "18–25°C", note: "Warm & sunny, Antalya" },
-  7:  { icon: "🌞", temp: "19–26°C", note: "Hot & sunny, ruins day" },
-  8:  { icon: "🌞", temp: "19–26°C", note: "Perfect beach weather" },
-  9:  { icon: "🌤️", temp: "18–24°C", note: "Fine for travel day" },
+  1:  { icon: "🌤️", temp: "16–22°C", note: "Mild & bright · Istanbul" , note_zh: "多云转晴 · 伊斯坦布尔" },
+  2:  { icon: "⛅",  temp: "10–16°C", note: "Cooler, cloudy spells · Istanbul" , note_zh: "阴，偶有云 · 伊斯坦布尔" },
+  3:  { icon: "🌤️", temp: "11–17°C", note: "Partly cloudy · Istanbul" , note_zh: "局部多云 · 伊斯坦布尔" },
+  4:  { icon: "⛅",  temp: "6–16°C",  note: "Partly cloudy · Cold at dawn" , note_zh: "局部多云 · 清晨较冷" },
+  5:  { icon: "☀️",  temp: "6–16°C",  note: "Clear skies · 5am ~6°C, dress warm!" , note_zh: "晴空万里 · 凌晨5点约6°C，注意保暖！" },
+  6:  { icon: "☀️",  temp: "15–26°C", note: "Warm & sunny · Antalya" , note_zh: "温暖晴朗 · 安塔利亚" },
+  7:  { icon: "🌞",  temp: "16–26°C", note: "Hot & sunny · Perfect ruins day" , note_zh: "炎热晴天 · 完美古迹探访日" },
+  8:  { icon: "🌤️", temp: "16–26°C", note: "Warm · Slight chance of rain" , note_zh: "温暖 · 偶有降雨可能" },
+  9:  { icon: "🌤️", temp: "16–26°C", note: "Fine travel day" , note_zh: "旅途好天气" },
 };
+
+const WEATHER_ZH = {
+  1:  { icon: "🌤️", temp: "16–22°C", note: "晴转多云 · 伊斯坦布尔" , note_zh: "多云转晴 · 伊斯坦布尔" },
+  2:  { icon: "⛅",  temp: "10–16°C", note: "多云 · 伊斯坦布尔" , note_zh: "阴，偶有云 · 伊斯坦布尔" },
+  3:  { icon: "🌤️", temp: "11–17°C", note: "局部多云 · 伊斯坦布尔" , note_zh: "局部多云 · 伊斯坦布尔" },
+  4:  { icon: "⛅",  temp: "6–16°C",  note: "局部多云 · 黎明寒冷" , note_zh: "局部多云 · 清晨较冷" },
+  5:  { icon: "☀️",  temp: "6–16°C",  note: "晴朗 · 凌晨约6°C，多穿衣！" , note_zh: "晴空万里 · 凌晨5点约6°C，注意保暖！" },
+  6:  { icon: "☀️",  temp: "15–26°C", note: "温暖晴朗 · 安塔利亚" , note_zh: "温暖晴朗 · 安塔利亚" },
+  7:  { icon: "🌞",  temp: "16–26°C", note: "炎热晴朗 · 完美的遗迹探访日" , note_zh: "炎热晴天 · 完美古迹探访日" },
+  8:  { icon: "🌤️", temp: "16–26°C", note: "温暖 · 可能有小雨" , note_zh: "温暖 · 偶有降雨可能" },
+  9:  { icon: "🌤️", temp: "16–26°C", note: "出行天气良好" , note_zh: "旅途好天气" },
+};
+
+// ── LIVE WEATHER (Open-Meteo · free · no API key) ────────────────────────
+// Fetches real forecast every time the page loads. Works up to 16 days ahead;
+// switches to climate archive automatically for past dates.
+const WEATHER_FETCH_CONFIG = [
+  { days: [1,2,3],   lat: 41.0082, lng: 28.9784, dates: ["2026-04-24","2026-04-25","2026-04-26"] },
+  { days: [4,5],     lat: 38.6407, lng: 34.8315, dates: ["2026-04-27","2026-04-28"] },
+  { days: [6,7,8,9], lat: 36.8583, lng: 30.7325, dates: ["2026-04-29","2026-04-30","2026-05-01","2026-05-02"] },
+];
+
+function wmoToWeather(code, tmin, tmax) {
+  const temp = `${Math.round(tmin)}–${Math.round(tmax)}°C`;
+  if (code === 0)                        return { icon: "☀️",  note: "Clear & sunny",    temp };
+  if (code === 1)                        return { icon: "🌤️", note: "Mainly clear",      temp };
+  if (code === 2)                        return { icon: "⛅",  note: "Partly cloudy",     temp };
+  if (code === 3)                        return { icon: "🌥️", note: "Overcast", note_zh: "阴天",           temp };
+  if ([45,48].includes(code))            return { icon: "🌫️", note: "Foggy", note_zh: "有雾",             temp };
+  if ([51,53,55].includes(code))         return { icon: "🌦️", note: "Light drizzle",     temp };
+  if ([61,63,65].includes(code))         return { icon: "🌧️", note: "Rainy", note_zh: "下雨",             temp };
+  if ([71,73,75].includes(code))         return { icon: "❄️",  note: "Snowy", note_zh: "下雪",             temp };
+  if ([80,81,82].includes(code))         return { icon: "🌦️", note: "Rain showers",      temp };
+  if ([95,96,99].includes(code))         return { icon: "⛈️",  note: "Thunderstorm", note_zh: "雷暴",      temp };
+  return { icon: "🌤️", note: "Mixed conditions", temp };
+}
+
+function updateWeatherBadges() {
+  DAYS.forEach(day => {
+    const w = WEATHER[day.day];
+    const card = document.getElementById(`day-card-${day.day}`);
+    if (!card) return;
+    const badge = card.querySelector('.weather-badge');
+    if (badge) badge.innerHTML = `<span class="wi">${w.icon}</span>${w.temp} · ${LANG==='zh'&&w.note_zh ? w.note_zh : w.note}`;
+  });
+}
+
+async function fetchLiveWeather() {
+  const today = new Date().toISOString().split('T')[0];
+  for (const cfg of WEATHER_FETCH_CONFIG) {
+    try {
+      const start = cfg.dates[0];
+      const end   = cfg.dates[cfg.dates.length - 1];
+      // Use archive API for fully past date ranges, forecast API otherwise
+      const isPast = end < today;
+      const base = isPast
+        ? 'https://archive-api.open-meteo.com/v1/archive'
+        : 'https://api.open-meteo.com/v1/forecast';
+      // forecast_days=16 extends the horizon beyond the 7-day default (archive API doesn't support it)
+      const url = `${base}?latitude=${cfg.lat}&longitude=${cfg.lng}`
+        + `&daily=temperature_2m_max,temperature_2m_min,weathercode`
+        + `&timezone=Europe%2FIstanbul`
+        + `&start_date=${start}&end_date=${end}`
+        + (isPast ? '' : '&forecast_days=16');
+      const res  = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.reason || 'API error');
+      cfg.days.forEach((dayNum, i) => {
+        const code = data.daily.weathercode[i];
+        const tmax = data.daily.temperature_2m_max[i];
+        const tmin = data.daily.temperature_2m_min[i];
+        if (code !== undefined && tmax !== null && tmin !== null) {
+          WEATHER[dayNum] = wmoToWeather(code, tmin, tmax);
+        } else {
+          WEATHER[dayNum] = { icon: "❓", temp: "—", note: "No data for this date yet" };
+        }
+      });
+    } catch(e) {
+      console.warn('Live weather unavailable, using pre-loaded forecast:', e.message);
+      // Keep the pre-loaded forecast data — no error shown to user
+    }
+  }
+  updateWeatherBadges();
+}
 
 // Hotels
 const HOTELS = {
@@ -523,320 +627,562 @@ const HOTELS = {
   antalya:    { name: "Delta Hotels Antalya Lara",  lat: 36.8583, lng: 30.7325, maps: "https://maps.google.com/?q=Delta+Hotels+Antalya+Lara" },
 };
 
-function hotelStop(key, time, note, warn) {
+
+// ── LANGUAGE MANAGEMENT ──────────────────────────────────────────────────
+let LANG = localStorage.getItem('turkey_lang') || 'en';
+
+function switchLang(l) {
+  LANG = l;
+  localStorage.setItem('turkey_lang', l);
+  applyLang();
+}
+
+function t(obj, field) {
+  if (!obj) return '';
+  if (LANG === 'zh') return obj[field + '_zh'] || obj[field];
+  return obj[field];
+}
+
+function ui(key) {
+  return UI_STRINGS[LANG][key] || UI_STRINGS.en[key];
+}
+
+const UI_STRINGS = {
+  en: {
+    pageTitle: "Turkey 2026 · Cecilia's Trip",
+    headerTitle: "9 Days in <em>Turkey</em>",
+    headerSub: "Apr 24 – May 2, 2026 · Cecilia's Trip",
+    sidebarTitle: "Daily Itinerary",
+    sidebarHint: "Tap a day · tap a stop to zoom map",
+    legendTitle: "Cities",
+    day: "Day",
+    addStop: "＋ Add a stop",
+    mapsBtn: "📍 Maps",
+    customBadge: "✦ Custom",
+    optionalBadge: "✦ Optional",
+    addBtn: "＋ Add",
+    cancelBtn: "✕",
+    placeholder: "Place name  or paste a Google Maps URL",
+    weatherLoading: "Loading forecast...",
+    taxiOrWalk: "taxi or walk",
+    distFrom: (dist, name) => `~${dist} km from ${name}`,
+    customStopAdded: "Your custom stop.",
+    optional: "✦ Optional",
+    hideStop: "Hide stop",
+    dragReorder: "Drag to reorder",
+    removeStop: "Remove",
+    searching: "Searching…",
+    found: (name) => `Found: ${name}`,
+    notFound: "Not found in",
+    addManually: "Add with coordinates",
+    coordPlaceholder: "lat, lng  e.g. 41.015, 28.978",
+    notFoundTitle: "📍 Not found in",
+    notFoundA: 'Copy the <strong>full Google Maps URL</strong> from your browser address bar and paste below',
+    notFoundB: 'In Google Maps, <strong>long-press</strong> on the spot → tap the coordinates → <strong>Copy coordinates</strong> → paste below',
+  },
+  zh: {
+    pageTitle: "土耳其 2026 · Cecilia的旅程",
+    headerTitle: "土耳其 <em>9日游</em>",
+    headerSub: "2026年4月24日 – 5月2日 · Cecilia的旅程",
+    sidebarTitle: "每日行程",
+    sidebarHint: "点击日期 · 点击景点可缩放地图",
+    legendTitle: "城市",
+    day: "第",
+    addStop: "＋ 添加景点",
+    mapsBtn: "📍 地图",
+    customBadge: "✦ 自定义",
+    optionalBadge: "✦ 可选",
+    addBtn: "＋ 添加",
+    cancelBtn: "✕",
+    placeholder: "地点名称或粘贴谷歌地图链接",
+    weatherLoading: "正在加载实时天气...",
+    taxiOrWalk: "出租车或步行",
+    distFrom: (dist, name) => `距${name}约${dist}公里`,
+    customStopAdded: "您添加的自定义景点。",
+    optional: "✦ 可选",
+    hideStop: "隐藏景点",
+    dragReorder: "拖动排序",
+    removeStop: "删除",
+    searching: "搜索中…",
+    found: (name) => `已找到：${name}`,
+    notFound: "在此城市未找到",
+    addManually: "手动输入坐标",
+    coordPlaceholder: "纬度, 经度  例如 41.015, 28.978",
+    notFoundTitle: "📍 在",
+    notFoundA: '从浏览器地址栏复制<strong>完整的谷歌地图链接</strong>并粘贴到下方',
+    notFoundB: '在谷歌地图中，<strong>长按</strong>目标位置 → 点击坐标 → <strong>复制坐标</strong> → 粘贴到下方',
+  }
+};
+
+function applyLang() {
+  document.title = ui('pageTitle');
+  const headerTitle = document.querySelector('.header-title');
+  if (headerTitle) headerTitle.innerHTML = ui('headerTitle');
+  const headerSub = document.querySelector('.header-sub');
+  if (headerSub) headerSub.textContent = ui('headerSub');
+  const sidebarH2 = document.querySelector('.sidebar-header h2');
+  if (sidebarH2) sidebarH2.textContent = ui('sidebarTitle');
+  const sidebarP = document.querySelector('.sidebar-header p');
+  if (sidebarP) sidebarP.textContent = ui('sidebarHint');
+  const legendTitle = document.querySelector('.legend-title');
+  if (legendTitle) legendTitle.textContent = ui('legendTitle');
+  const btnEn = document.getElementById('btn-en');
+  const btnZh = document.getElementById('btn-zh');
+  if (btnEn) btnEn.className = 'lang-btn' + (LANG==='en'?' active':'');
+  if (btnZh) btnZh.className = 'lang-btn' + (LANG==='zh'?' active':'');
+
+  // Update each day card in-place (preserves custom stops & open state)
+  DAYS.forEach(day => {
+    const card = document.getElementById(`day-card-${day.day}`);
+    if (!card) return;
+    const h3 = card.querySelector('.day-info h3');
+    if (h3) h3.textContent = t(day, 'title');
+    const dateEl = card.querySelector('.day-info .date');
+    if (dateEl) dateEl.textContent = t(day, 'date');
+    const cityEl = card.querySelector('.city-tag');
+    if (cityEl) cityEl.textContent = t(day, 'city');
+    const dayLabel = card.querySelector('.day-num .label');
+    if (dayLabel) dayLabel.textContent = ui('day');
+    // Update builtin stop names/notes/warns
+    const builtinStops = card.querySelectorAll('.stop-item[data-type="builtin"]');
+    builtinStops.forEach(el => {
+      const idx = parseInt(el.dataset.idx);
+      const stop = day.stops[idx];
+      if (!stop) return;
+      const nameEl = el.querySelector('.stop-name');
+      if (nameEl) nameEl.textContent = nameEl.textContent.includes('🏨') ? (t(stop,'name')) : t(stop,'name');
+      const noteEl = el.querySelector('.stop-note');
+      if (noteEl) {
+        // Always restore the correct-language original note first;
+        // updateBuiltinTransportNotes (below) will override for in-session reordered days
+        noteEl.textContent = t(stop, 'note');
+        noteEl.style.color = '';
+      }
+      const warnEl = el.querySelector('.stop-warn');
+      if (warnEl) warnEl.textContent = '⚠️ ' + t(stop,'warn');
+      // Update link labels
+      el.querySelectorAll('.stop-link').forEach(a => {
+        const ltype = a.className.replace('stop-link','').trim();
+        const link = (stop.links||[]).find(l => l.type === ltype);
+        if (link) a.textContent = t(link,'label');
+      });
+    });
+    // Update add-stop button
+    const addBtn = card.querySelector('.add-stop-btn');
+    if (addBtn) addBtn.textContent = ui('addStop');
+  });
+
+  updateWeatherBadges();
+
+  // Update flight badges
+  DAYS.forEach(day => {
+    const card = document.getElementById(`day-card-${day.day}`);
+    if (!card) return;
+    const fb = card.querySelector('.flight-badge');
+    const flightStr = t(day, 'flight');
+    if (fb && flightStr) {
+      fb.innerHTML = flightStr.split('\n').map(l => `<div>${l}</div>`).join('');
+    }
+  });
+
+  // Update custom stop labels (badge, maps button) and transport notes
+  document.querySelectorAll('.custom-stop-item').forEach(el => {
+    const badge = el.querySelector('.custom-badge');
+    if (badge) badge.textContent = ui('customBadge');
+    const mapsLink = el.querySelector('.custom-maps-link');
+    if (mapsLink) mapsLink.textContent = ui('mapsBtn');
+  });
+
+  // Re-run transport notes for days with custom stops
+  const allDayNums = new Set(
+    Array.from(document.querySelectorAll('.custom-stop-item'))
+      .map(el => parseInt(el.dataset.day))
+      .filter(Boolean)
+  );
+  allDayNums.forEach(dayNum => redrawCustomPolylines(dayNum));
+
+  // Re-apply computed transport notes for any days reordered this session (language-dependent)
+  reorderedInSession.forEach(dayNum => updateBuiltinTransportNotes(dayNum));
+}
+
+
+
+function updateWeatherBadges() {
+  const badge = document.getElementById('weather-badge');
+  if (!badge) return;
+  const w = (LANG === 'zh' ? WEATHER_ZH : WEATHER)[1] || { icon: '🌤️', temp: '—', note: '' };
+  badge.textContent = `${w.icon} ${w.temp}`;
+}
+
+function toggleDay(dayNum) {
+  const card = document.getElementById(`day-card-${dayNum}`);
+  if (activeDay === dayNum) {
+    card.classList.remove('active');
+    activeDay = null;
+    map.fitBounds(allCoords, { padding: [40, 40], animate: true });
+    allPolylines.forEach(({ poly }) => poly.setStyle({ opacity: 0.55, weight: 2.5 }));
+    allMarkers.forEach(({ marker }) => marker.setOpacity(1));
+    return;
+  }
+  ensureSheetOpen();
+  if (activeDay !== null) document.getElementById(`day-card-${activeDay}`)?.classList.remove('active');
+  card.classList.add('active');
+  activeDay = dayNum;
+
+  const day = DAYS.find(d => d.day === dayNum);
+  const coords = day.stops.map(s => [s.lat, s.lng]);
+  if (coords.length === 1) map.setView(coords[0], 13, { animate: true, duration: 0.7 });
+  else map.fitBounds(coords, { padding: [60, 60], animate: true, duration: 0.7 });
+
+  allPolylines.forEach(({ poly, day: d }) =>
+    poly.setStyle({ opacity: d === dayNum ? 0.9 : 0.08, weight: d === dayNum ? 3.5 : 1.5 }));
+  allMarkers.forEach(({ marker, day: d }) =>
+    marker.setOpacity(d === dayNum ? 1 : 0.2));
+}
+
+
+function hotelStop(key, time, note, note_zh, warn, warn_zh) {
   const h = HOTELS[key];
   return {
-    name: "🏨 " + h.name, lat: h.lat, lng: h.lng, time, note: note || "Your base for this stay.",
-    warn: warn || null, isHotel: true,
-    links: [{ label: "📍 Maps", url: h.maps, type: "maps" }]
+    name: "🏨 " + h.name, name_zh: "🏨 " + h.name, lat: h.lat, lng: h.lng, time,
+    note: note || "Your base for this stay.",
+    note_zh: note_zh || "您此次住宿的基地。",
+    warn: warn || null, warn_zh: warn_zh || null, isHotel: true,
+    links: [{ label: "📍 Maps", label_zh: "📍 地图", url: h.maps, type: "maps" }]
   };
 }
 
 const DAYS = [
   {
-    day: 1, date: "Thu 24 Apr", city: "Istanbul",
-    title: "Arrive Istanbul — New District",
-    flight: "✈ 3U3827  CTU 01:35 → IST 06:30",
+    day: 1, date: "Thu 24 Apr", date_zh: "周四 4月24日", city: "Istanbul", city_zh: "伊斯坦布尔",
+    title: "Arrive Istanbul — New District", title_zh: "抵达伊斯坦布尔 — 新城区",
+    flight: "✈ 3U3827  CTU 01:35 → IST 06:30", flight_zh: "✈ 3U3827  成都 01:35 → 伊斯坦布尔 06:30",
     color: "#C4623A",
     stops: [
       {
-        name: "Istanbul Airport (IST)", lat: 41.2761, lng: 28.7287, time: "06:30",
+        name: "Istanbul Airport (IST)", name_zh: "伊斯坦布尔机场 (IST)", lat: 41.2761, lng: 28.7287, time: "06:30",
         note: "Buy Istanbul Card at metro station — 200 TL load + 165 TL card fee. Take Havaist bus or metro to Taksim (~45 min).",
-        warn: null,
+        note_zh: "在地铁站购买伊斯坦布尔卡 — 充值200里拉 + 165里拉工本费。乘坐Havaist巴士或地铁前往塔克西姆广场（约45分钟）。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Istanbul+Airport+IST", type: "maps" },
-          { label: "🚌 Havaist Bus", url: "https://www.hava.ist/en", type: "info" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Istanbul+Airport+IST", type: "maps" },
+          { label: "🚌 Havaist Bus", label_zh: "🚌 Havaist巴士", url: "https://www.hava.ist/en", type: "info" }
         ]
       },
-      hotelStop("istanbul", "08:30", "Check in & rest. Hotel is steps from Taksim Square. Drop bags, freshen up before exploring."),
+      hotelStop("istanbul", "08:30", "Check in & rest. Hotel is steps from Taksim Square. Drop bags, freshen up before exploring.", "入住休息。酒店紧邻塔克西姆广场。放好行李、整理后再出发探索。", "", ""),
       {
-        name: "Dolmabahçe Palace", lat: 41.0391, lng: 29.0005, time: "14:00",
+        name: "Dolmabahçe Palace", name_zh: "多尔马巴赫切宫", lat: 41.0391, lng: 29.0005, time: "14:00",
         note: "35 EUR · 09:00–17:00 · 10 min walk downhill from hotel along the Bosphorus. No photos inside.",
-        warn: "Closed Monday",
+        note_zh: "35欧元 · 09:00–17:00 · 从酒店沿博斯普鲁斯海峡步行10分钟下坡即达。室内禁止拍照。",
+        warn: "Closed Monday", warn_zh: "周一闭馆",
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Dolmabahce+Palace+Istanbul", type: "maps" },
-          { label: "🎟 Tickets", url: "https://www.millisaraylar.gov.tr/en/palaces/dolmabahce-palace", type: "book" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Dolmabahce+Palace+Istanbul", type: "maps" },
+          { label: "🎟 Tickets", label_zh: "🎟 购票", url: "https://www.millisaraylar.gov.tr/en/palaces/dolmabahce-palace", type: "book" }
         ]
       },
       {
-        name: "Galata Tower", lat: 41.0255, lng: 28.9741, time: "17:00",
+        name: "Galata Tower", name_zh: "加拉塔塔", lat: 41.0255, lng: 28.9741, time: "17:00",
         note: "30 EUR · 08:30–22:00 · Take tram T1 south from Kabataş to Karaköy, then walk up. 360° city views at golden hour!",
-        warn: null,
+        note_zh: "30欧元 · 08:30–22:00 · 从卡巴塔什乘T1有轨电车南行至卡拉科伊，再步行上山。黄金时段360°城市全景！",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Galata+Tower+Istanbul", type: "maps" },
-          { label: "🎟 Tickets", url: "https://galatakulesi.gov.tr/en/visit/admission/", type: "book" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Galata+Tower+Istanbul", type: "maps" },
+          { label: "🎟 Tickets", label_zh: "🎟 购票", url: "https://galatakulesi.gov.tr/en/visit/admission/", type: "book" }
         ]
       },
-      hotelStop("istanbul", "19:30", "Return to hotel. Tram T1 to Kabataş then walk or taxi up to Harbiye (~20 min total).")
+      hotelStop("istanbul", "19:30", "Return to hotel. Tram T1 to Kabataş then walk or taxi up to Harbiye (~20 min total).", "返回酒店。乘T1有轨电车至卡巴塔什，再步行或打车至哈尔比耶（全程约20分钟）。", "", "")
     ]
   },
   {
-    day: 2, date: "Fri 25 Apr", city: "Istanbul",
-    title: "Sultanahmet — Historic Core",
+    day: 2, date: "Fri 25 Apr", date_zh: "周五 4月25日", city: "Istanbul", city_zh: "伊斯坦布尔",
+    title: "Sultanahmet — Historic Core", title_zh: "苏丹艾哈迈德 — 历史中心",
     color: "#C4623A",
     stops: [
-      hotelStop("istanbul", "08:30", "Take tram T1 from Kabataş → Sultanahmet (15 min). All today's stops are within 5 min walk of each other!"),
+      hotelStop("istanbul", "08:30", "Take tram T1 from Kabataş → Sultanahmet (15 min). All today's stops are within 5 min walk of each other!", "乘T1有轨电车从卡巴塔什→苏丹艾哈迈德（15分钟）。今天所有景点相互步行5分钟即可到达！", "", ""),
       {
-        name: "Hagia Sophia", lat: 41.0086, lng: 28.9802, time: "09:00",
+        name: "Hagia Sophia", name_zh: "圣索菲亚大教堂", lat: 41.0086, lng: 28.9802, time: "09:00",
         note: "2,650 TL · Free entry as mosque · Arrive before 10am to beat tour groups. Allow 1–1.5 hrs.",
-        warn: null,
+        note_zh: "2,650里拉 · 清真寺免费入场 · 建议10点前到达以避开旅行团。参观时间约1–1.5小时。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Hagia+Sophia+Istanbul", type: "maps" },
-          { label: "ℹ️ Info", url: "https://en.wikipedia.org/wiki/Hagia_Sophia", type: "info" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Hagia+Sophia+Istanbul", type: "maps" },
+          { label: "ℹ️ Info", label_zh: "ℹ️ 详情", url: "https://en.wikipedia.org/wiki/Hagia_Sophia", type: "info" }
         ]
       },
       {
-        name: "Topkapı Palace", lat: 41.0115, lng: 28.9834, time: "11:00",
+        name: "Topkapı Palace", name_zh: "托普卡帕宫", lat: 41.0115, lng: 28.9834, time: "11:00",
         note: "2,750 TL · 09:00–17:00 · 2 min walk from Hagia Sophia. Allow 3 hours. Harem is an extra ticket.",
-        warn: "Closed Tuesday",
+        note_zh: "2,750里拉 · 09:00–17:00 · 距圣索菲亚步行2分钟。建议预留3小时。后宫需另外购票。",
+        warn: "Closed Tuesday", warn_zh: "周二闭馆",
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Topkapi+Palace+Istanbul", type: "maps" },
-          { label: "🎟 Tickets", url: "https://www.millisaraylar.gov.tr/en/palaces/topkapi-palace", type: "book" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Topkapi+Palace+Istanbul", type: "maps" },
+          { label: "🎟 Tickets", label_zh: "🎟 购票", url: "https://www.millisaraylar.gov.tr/en/palaces/topkapi-palace", type: "book" }
         ]
       },
       {
-        name: "Istanbul Archaeological Museum", lat: 41.0122, lng: 28.9811, time: "14:30",
+        name: "Istanbul Archaeological Museum", name_zh: "伊斯坦布尔考古博物馆", lat: 41.0122, lng: 28.9811, time: "14:30",
         note: "15 EUR · 09:00–17:30 · Inside Topkapı grounds — visit right after palace. Closes at 17:30, don't miss it!",
-        warn: "Closed Monday",
+        note_zh: "15欧元 · 09:00–17:30 · 在托普卡帕宫内——参观完宫殿后顺道游览。17:30关闭，别错过！",
+        warn: "Closed Monday", warn_zh: "周一闭馆",
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Istanbul+Archaeological+Museum", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Istanbul+Archaeological+Museum", type: "maps" }
         ]
       },
       {
-        name: "Blue Mosque", lat: 41.0054, lng: 28.9768, time: "16:00",
+        name: "Blue Mosque", name_zh: "蓝色清真寺", lat: 41.0054, lng: 28.9768, time: "16:00",
         note: "FREE 🕌 · 5 min walk south of Topkapı. Bring headscarf. Closed ~30 min during prayer times.",
-        warn: null,
+        note_zh: "免费 🕌 · 距托普卡帕宫步行5分钟。请携带头巾。礼拜时间前后约关闭30分钟。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Blue+Mosque+Istanbul", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Blue+Mosque+Istanbul", type: "maps" }
         ]
       },
       {
-        name: "Basilica Cistern", lat: 41.0084, lng: 28.9779, time: "17:00",
+        name: "Basilica Cistern", name_zh: "地下水宫", lat: 41.0084, lng: 28.9779, time: "17:00",
         note: "30 EUR · 09:00–18:30 · 1 min walk from Blue Mosque. Underground Byzantine cistern with Medusa columns.",
-        warn: null,
+        note_zh: "30欧元 · 09:00–18:30 · 距蓝色清真寺步行1分钟。地下拜占庭蓄水池，有美杜莎石柱。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Basilica+Cistern+Istanbul", type: "maps" },
-          { label: "🎟 Book Online", url: "https://yerebatan.com/en", type: "book" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Basilica+Cistern+Istanbul", type: "maps" },
+          { label: "🎟 Book Online", label_zh: "🎟 在线订票", url: "https://yerebatan.com/en", type: "book" }
         ]
       },
-      hotelStop("istanbul", "19:00", "Tram T1 from Sultanahmet → Kabataş, then walk up to hotel (~20 min).")
+      hotelStop("istanbul", "19:00", "Tram T1 from Sultanahmet → Kabataş, then walk up to hotel (~20 min).", "从苏丹艾哈迈德乘T1有轨电车→卡巴塔什，再步行上山至酒店（约20分钟）。", "", "")
     ]
   },
   {
-    day: 3, date: "Sat 26 Apr", city: "Istanbul",
-    title: "Asian Side — Kadıköy & Ferry",
+    day: 3, date: "Sat 26 Apr", date_zh: "周六 4月26日", city: "Istanbul", city_zh: "伊斯坦布尔",
+    title: "Asian Side — Kadıköy & Ferry", title_zh: "亚洲一侧 — 卡德柯伊与渡轮",
     color: "#C4623A",
     stops: [
-      hotelStop("istanbul", "11:00", "Relaxed morning. Walk or taxi to Kabataş for the ferry."),
+      hotelStop("istanbul", "11:00", "Relaxed morning. Walk or taxi to Kabataş for the ferry.", "悠闲的早晨。步行或打车至卡巴塔什乘渡轮。", "", ""),
       {
-        name: "Eminönü Ferry Pier", lat: 41.0175, lng: 28.9744, time: "12:00",
+        name: "Eminönü Ferry Pier", name_zh: "埃米诺努渡轮码头", lat: 41.0175, lng: 28.9744, time: "12:00",
         note: "Take commuter ferry (NOT tourist boat) to Kadıköy — use Istanbul Card. Ferry runs every 20–30 min, ~25 min crossing.",
-        warn: null,
+        note_zh: "乘坐通勤渡轮（非观光船）前往卡德柯伊——使用伊斯坦布尔卡。渡轮每20–30分钟一班，航行约25分钟。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Eminonu+Ferry+Pier+Istanbul", type: "maps" },
-          { label: "🚢 Ferry Info", url: "https://www.ido.com.tr/en", type: "info" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Eminonu+Ferry+Pier+Istanbul", type: "maps" },
+          { label: "🚢 Ferry Info", label_zh: "🚢 渡轮信息", url: "https://www.ido.com.tr/en", type: "info" }
         ]
       },
       {
-        name: "Kadıköy Market", lat: 40.9819, lng: 29.0325, time: "12:30",
+        name: "Kadıköy Market", name_zh: "卡德柯伊市场", lat: 40.9819, lng: 29.0325, time: "12:30",
         note: "Explore the Asian side market, Moda café strip & Üsküdar waterfront. Shops open from noon. Great street food!",
-        warn: null,
+        note_zh: "探索亚洲一侧的市集、莫达咖啡街和于斯屈达尔海滨。商店从中午开始营业。街头美食一绝！",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Kadikoy+Market+Istanbul", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Kadikoy+Market+Istanbul", type: "maps" }
         ]
       },
-      hotelStop("istanbul", "18:00", "Ferry back to Eminönü/Karaköy, then tram T1 to Kabataş, walk or taxi up to hotel.")
+      hotelStop("istanbul", "18:00", "Ferry back to Eminönü/Karaköy, then tram T1 to Kabataş, walk or taxi up to hotel.", "渡轮返回埃米诺努/卡拉科伊，再乘T1有轨电车至卡巴塔什，步行或打车回酒店。", "", "")
     ]
   },
   {
-    day: 4, date: "Sun 27 Apr", city: "Cappadocia",
-    title: "Fly to Cappadocia — Afternoon Explore",
-    flight: "✈ TK2002  IST 08:15 → NAV 09:35",
+    day: 4, date: "Sun 27 Apr", date_zh: "周日 4月27日", city: "Cappadocia", city_zh: "卡帕多西亚",
+    title: "Fly to Cappadocia — Afternoon Explore", title_zh: "飞往卡帕多西亚 — 下午探索",
+    flight: "✈ TK2004  IST 11:20 → NAV 12:40", flight_zh: "✈ TK2004  伊斯坦布尔 11:20 → 内夫谢希尔 12:40",
     color: "#8B5E3C",
     stops: [
-      hotelStop("istanbul", "05:00", "Check out. Taxi from hotel to IST airport — allow ~60 min for the drive.", "Check out by 05:00!"),
+      hotelStop("istanbul", "08:30", "Check out. Taxi from hotel to IST airport — allow ~60 min for the drive.", "退房。从酒店打车至伊斯坦布尔机场——预留约60分钟车程。", "Check out by 08:30!", "08:30前退房！"),
       {
-        name: "Istanbul Airport (IST) — Depart", lat: 41.2761, lng: 28.7287, time: "06:15",
-        note: "IST is huge — allow 90 min before flight. Check-in at TK desks. Flight TK2002 departs 08:15.",
-        warn: "Be at airport by 06:15!",
+        name: "Istanbul Airport (IST) — Depart", name_zh: "伊斯坦布尔机场 (IST) — 出发", lat: 41.2761, lng: 28.7287, time: "09:50",
+        note: "IST is huge — allow 90 min before flight. Check-in at TK desks. Flight TK2004 departs 11:20.",
+        note_zh: "伊斯坦布尔机场非常大——请提前90分钟到达。在土耳其航空柜台办理值机。TK2004航班11:20起飞。",
+        warn: "Be at airport by 09:50!", warn_zh: "09:50前到达机场！",
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Istanbul+Airport+IST", type: "maps" },
-          { label: "✈ Turkish Airlines", url: "https://www.turkishairlines.com/en-int/flights/manage-booking", type: "book" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Istanbul+Airport+IST", type: "maps" },
+          { label: "✈ Turkish Airlines", label_zh: "✈ 土耳其航空", url: "https://www.turkishairlines.com/en-int/flights/manage-booking", type: "book" }
         ]
       },
       {
-        name: "Nevşehir Airport (NAV)", lat: 38.7719, lng: 34.5355, time: "09:35",
+        name: "Nevşehir Airport (NAV)", name_zh: "内夫谢希尔机场 (NAV)", lat: 38.7719, lng: 34.5355, time: "12:40",
         note: "Pre-booked minibus to Göreme ~30–40 min. Ask Artemis Cave Suites to arrange pickup the night before!",
-        warn: null,
+        note_zh: "预订好的小巴前往格雷梅约30–40分钟。提前一晚联系Artemis Cave Suites安排接机！",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Nevsehir+Kapadokya+Airport", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Nevsehir+Kapadokya+Airport", type: "maps" }
         ]
       },
-      hotelStop("cappadocia", "10:30", "Check in, freshen up & have lunch. Book balloon for tomorrow if not done. Then explore nearby in the afternoon!"),
+      hotelStop("cappadocia", "13:30", "Check in, freshen up & have lunch. Book balloon for tomorrow if not done. Then explore nearby in the afternoon!", "入住，整理后吃午饭。如未预订热气球请今日预订。下午可探索附近。", "", ""),
       {
-        name: "Üçhisar Castle", lat: 38.6299, lng: 34.8054, time: "13:30",
+        name: "Üçhisar Castle", name_zh: "乌奇萨尔城堡", lat: 38.6299, lng: 34.8054, time: "15:00",
         note: "~3 km from hotel · Highest point in Cappadocia · 07:00–21:00. Best panoramic view of fairy chimneys — great first impression!",
-        warn: null,
+        note_zh: "距酒店约3公里 · 卡帕多西亚最高点 · 07:00–21:00。俯瞰仙烟囱全景——初来乍到的绝佳第一印象！",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Uchisar+Castle+Cappadocia", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Uchisar+Castle+Cappadocia", type: "maps" }
         ]
       },
       {
-        name: "Pigeon Valley", lat: 38.6380, lng: 34.8150, time: "15:30",
+        name: "Pigeon Valley", name_zh: "鸽谷", lat: 38.6380, lng: 34.8150, time: "16:30",
         note: "Short taxi ride from Üçhisar Castle (~5 min). Named for thousands of dovecotes carved into the cliffs. Stroll the viewpoint at a leisurely pace — no hiking needed!",
-        warn: null,
+        note_zh: "距乌奇萨尔城堡打车约5分钟。因崖壁上凿有数千个鸽舍而得名。漫步观景台，无需徒步！",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Pigeon+Valley+Cappadocia", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Pigeon+Valley+Cappadocia", type: "maps" }
         ]
       },
-      hotelStop("cappadocia", "17:00", "Back at hotel. Dinner & very early night — 04:30 balloon pickup tomorrow!", "Sleep early — 04:30 pickup!")
+      hotelStop("cappadocia", "17:00", "Back at hotel. Dinner & very early night — 04:30 balloon pickup tomorrow!", "返回酒店。晚餐后早睡——明天04:30热气球接机！", "Sleep early — 04:30 pickup!", "早睡——04:30接机！")
     ]
   },
   {
-    day: 5, date: "Mon 28 Apr", city: "Cappadocia",
-    title: "Hot Air Balloon + Göreme Museum",
+    day: 5, date: "Mon 28 Apr", date_zh: "周一 4月28日", city: "Cappadocia", city_zh: "卡帕多西亚",
+    title: "Hot Air Balloon + Göreme Museum", title_zh: "热气球 + 格雷梅博物馆",
     color: "#8B5E3C",
     stops: [
-      hotelStop("cappadocia", "04:30", "Balloon company pickup from hotel lobby. Dress in layers — it's ~8°C at dawn!", "04:30 pickup — don't be late!"),
+      hotelStop("cappadocia", "04:30", "Balloon company pickup from hotel lobby. Dress in layers — it's ~8°C at dawn!", "气球公司在酒店大堂接机。请穿多层衣物——黎明时约8°C！", "04:30 pickup — don't be late!", "04:30接机——别迟到！"),
       {
-        name: "Rose Valley (Balloon Launch)", lat: 38.6591, lng: 34.8433, time: "05:00",
+        name: "Rose Valley (Balloon Launch)", name_zh: "玫瑰谷（热气球起飞点）", lat: 38.6591, lng: 34.8433, time: "05:00",
         note: "🎈 150–300 EUR/person · EUR cash only! ~1 hr flight over fairy chimneys at sunrise. Truly unforgettable.",
-        warn: "Book 2–3 weeks ahead!",
+        note_zh: "🎈 每人150–300欧元 · 只收欧元现金！日出时分飞越仙烟囱约1小时，令人难忘。",
+        warn: "Book 2–3 weeks ahead!", warn_zh: "提前2–3周预订！",
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Rose+Valley+Goreme+Cappadocia", type: "maps" },
-          { label: "🎈 Kapadokya Balloons", url: "https://www.kapadokyaballoons.com", type: "book" },
-          { label: "🎈 Royal Balloon", url: "https://www.royalballoon.com", type: "book" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Rose+Valley+Goreme+Cappadocia", type: "maps" },
+          { label: "🎈 Kapadokya Balloons", label_zh: "🎈 卡帕多西亚气球", url: "https://www.kapadokyaballoons.com", type: "book" },
+          { label: "🎈 Royal Balloon", label_zh: "🎈 皇家气球", url: "https://www.royalballoon.com", type: "book" }
         ]
       },
-      hotelStop("cappadocia", "08:30", "Return to hotel. Celebratory breakfast with balloon views. Rest before afternoon."),
+      hotelStop("cappadocia", "08:30", "Return to hotel. Celebratory breakfast with balloon views. Rest before afternoon.", "返回酒店。在热气球美景下享用庆祝早餐。下午前好好休息。", "", ""),
       {
-        name: "Göreme Open Air Museum", lat: 38.6416, lng: 34.8439, time: "10:30",
+        name: "Göreme Open Air Museum", name_zh: "格雷梅露天博物馆", lat: 38.6416, lng: 34.8439, time: "10:30",
         note: "720 TL + 150 TL Dark Church · 08:00–16:15 · 5 min walk from hotel. Byzantine rock churches with stunning frescoes.",
-        warn: null,
+        note_zh: "720里拉 + 150里拉黑暗教堂 · 08:00–16:15 · 距酒店步行5分钟。拜占庭石窟教堂，壁画精美绝伦。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Goreme+Open+Air+Museum", type: "maps" },
-          { label: "ℹ️ Info", url: "https://en.wikipedia.org/wiki/G%C3%B6reme_Open_Air_Museum", type: "info" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Goreme+Open+Air+Museum", type: "maps" },
+          { label: "ℹ️ Info", label_zh: "ℹ️ 详情", url: "https://en.wikipedia.org/wiki/G%C3%B6reme_Open_Air_Museum", type: "info" }
         ]
       },
-      hotelStop("cappadocia", "13:00", "Return to hotel. Rest up — early departure tomorrow for Kayseri Airport.", "Early start tomorrow!")
+      hotelStop("cappadocia", "13:00", "Return to hotel. Rest up — early departure tomorrow for Kayseri Airport.", "返回酒店休息——明天早起飞往开塞利机场。", "Early start tomorrow!", "明天早起！")
     ]
   },
   {
-    day: 6, date: "Tue 29 Apr", city: "Antalya",
-    title: "Fly to Antalya — Old Town Walk",
-    flight: "✈ XQ7033  ASR 09:55 → AYT 11:15",
+    day: 6, date: "Tue 29 Apr", date_zh: "周二 4月29日", city: "Antalya", city_zh: "安塔利亚",
+    title: "Fly to Antalya — Old Town Walk", title_zh: "飞往安塔利亚 — 老城漫步",
+    flight: "✈ XQ7033  ASR 09:55 → AYT 11:15", flight_zh: "✈ XQ7033  开塞利 09:55 → 安塔利亚 11:15",
     color: "#2E7D7A",
     stops: [
-      hotelStop("cappadocia", "07:30", "Check out. Hotel-arranged taxi to Kayseri Airport (ASR), ~60 min drive.", "Check out by 07:30!"),
+      hotelStop("cappadocia", "07:30", "Check out. Hotel-arranged taxi to Kayseri Airport (ASR), ~60 min drive.", "退房。酒店安排出租车前往开塞利机场（ASR），车程约60分钟。", "Check out by 07:30!", "07:30前退房！"),
       {
-        name: "Kayseri Airport (ASR)", lat: 38.7703, lng: 35.4954, time: "08:30",
+        name: "Kayseri Airport (ASR)", name_zh: "开塞利机场 (ASR)", lat: 38.7703, lng: 35.4954, time: "08:30",
         note: "Allow 90 min before flight XQ7033 (09:55). Small airport — easy check-in.",
-        warn: null,
+        note_zh: "XQ7033航班09:55起飞，请提前90分钟到达。小机场，值机方便。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Kayseri+Erkilet+Airport+ASR", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Kayseri+Erkilet+Airport+ASR", type: "maps" }
         ]
       },
       {
-        name: "Antalya Airport (AYT)", lat: 36.8988, lng: 30.8004, time: "11:15",
+        name: "Antalya Airport (AYT)", name_zh: "安塔利亚机场 (AYT)", lat: 36.8988, lng: 30.8004, time: "11:15",
         note: "Arrive 11:15. Taxi to Delta Hotels Antalya Lara ~15 min. Drop bags, then head to Old Town.",
-        warn: null,
+        note_zh: "TK2443航班10:20起飞→伊斯坦布尔12:05。在土耳其航空办理值机。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Antalya+Airport+AYT", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Antalya+Airport+AYT", type: "maps" }
         ]
       },
-      hotelStop("antalya", "12:00", "Check in. Hotel is in Lara beach area, ~4 km east of Old Town — easy taxi ride."),
+      hotelStop("antalya", "12:00", "Check in. Hotel is in Lara beach area, ~4 km east of Old Town — easy taxi ride.", "入住。酒店位于拉拉海滩区，距老城约4公里——打车很方便。", "", ""),
       {
-        name: "Hadrian's Gate", lat: 36.8852, lng: 30.7086, time: "13:30",
+        name: "Hadrian's Gate", name_zh: "哈德良城门", lat: 36.8852, lng: 30.7086, time: "13:30",
         note: "FREE · Open 24hrs · ~3.5 km from hotel, 10–12 min taxi via Lara Cad. Roman triumphal arch built 130 AD — the entrance gate to Kaleiçi Old Town.",
-        warn: null,
+        note_zh: "免费 · 全天开放 · 距酒店约3.5公里，打车约10–12分钟。建于公元130年的罗马凯旋门——卡莱伊奇老城的入口。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Hadrian%27s+Gate+Antalya", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Hadrian%27s+Gate+Antalya", type: "maps" }
         ]
       },
       {
-        name: "Kaleiçi Old Town", lat: 36.8823, lng: 30.7053, time: "14:00",
+        name: "Kaleiçi Old Town", name_zh: "卡莱伊奇老城", lat: 36.8823, lng: 30.7053, time: "14:00",
         note: "Wander Ottoman cobblestone streets, the Roman harbour & cliff-top views. Excellent restaurants for dinner here.",
-        warn: null,
+        note_zh: "漫步奥斯曼鹅卵石街道、罗马港口及悬崖顶的美景。这里有绝佳的晚餐餐厅。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Kaleici+Old+Town+Antalya", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Kaleici+Old+Town+Antalya", type: "maps" }
         ]
       },
-      hotelStop("antalya", "19:00", "Taxi back to Lara hotel (~10 min, ~50–80 TL).")
+      hotelStop("antalya", "19:00", "Taxi back to Lara hotel (~10 min, ~50–80 TL).", "打车返回拉拉酒店（约10分钟，约50–80里拉）。", "", "")
     ]
   },
   {
-    day: 7, date: "Wed 30 Apr", city: "Antalya",
-    title: "Ancient Ruins — East Corridor",
+    day: 7, date: "Wed 30 Apr", date_zh: "周三 4月30日", city: "Antalya", city_zh: "安塔利亚",
+    title: "Ancient Ruins — East Corridor", title_zh: "古代遗迹 — 东部走廊",
     color: "#2E7D7A",
     stops: [
-      hotelStop("antalya", "08:30", "Book a day tour from hotel, or rent a car. Ruins are east of Antalya — perfect linear route with no backtracking."),
+      hotelStop("antalya", "08:30", "Book a day tour from hotel, or rent a car. Ruins are east of Antalya — perfect linear route with no backtracking.", "从酒店预订一日游，或租车前往。遗址在安塔利亚以东——沿途无需折返，路线顺畅。", "", ""),
       {
-        name: "Perge Ancient City", lat: 36.9577, lng: 30.8526, time: "09:00",
+        name: "Perge Ancient City", name_zh: "佩尔格古城", lat: 36.9577, lng: 30.8526, time: "09:00",
         note: "~17 km from hotel · 08:00–17:00 · Roman city with colonnaded main street. Allow 1.5 hrs.",
-        warn: null,
+        note_zh: "距酒店约17公里 · 08:00–17:00 · 带柱廊主街的罗马城市。建议预留1.5小时。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Perge+Ancient+City+Antalya", type: "maps" },
-          { label: "ℹ️ Info", url: "https://en.wikipedia.org/wiki/Perge", type: "info" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Perge+Ancient+City+Antalya", type: "maps" },
+          { label: "ℹ️ Info", label_zh: "ℹ️ 详情", url: "https://en.wikipedia.org/wiki/Perge", type: "info" }
         ]
       },
       {
-        name: "Aspendos Theatre", lat: 36.9389, lng: 31.1722, time: "11:30",
+        name: "Aspendos Theatre", name_zh: "阿斯彭多斯剧场", lat: 36.9389, lng: 31.1722, time: "11:30",
         note: "~47 km from hotel · 08:00–16:30 · Drive east from Perge (~30 min). Best-preserved Roman theatre in the world!",
-        warn: null,
+        note_zh: "距酒店约47公里 · 08:00–16:30 · 从佩尔格向东驾车约30分钟。世界保存最完好的罗马剧场！",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Aspendos+Theatre+Antalya", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Aspendos+Theatre+Antalya", type: "maps" }
         ]
       },
-      hotelStop("antalya", "16:00", "Drive back to hotel ~47 km (~45 min). Or dine near Aspendos before returning.")
+      hotelStop("antalya", "16:00", "Drive back to hotel ~47 km (~45 min). Or dine near Aspendos before returning.", "驾车返回酒店约47公里（约45分钟）。或在阿斯彭多斯附近用餐后再回。", "", "")
     ]
   },
   {
-    day: 8, date: "Thu 1 May", city: "Antalya",
+    day: 8, date: "Thu 1 May", date_zh: "周四 5月1日", city: "Antalya", city_zh: "安塔利亚",
     title: "Free Day — Antalya at Leisure",
     color: "#2E7D7A",
     stops: [
-      hotelStop("antalya", "Morning", "No fixed plans today — fully flexible. Suggestions below are all optional 😊"),
+      hotelStop("antalya", "Morning", "No fixed plans today — fully flexible. Suggestions below are all optional 😊", "今天没有固定行程——完全自由。以下景点均为可选 😊", "", ""),
       {
-        name: "Antalya Museum", lat: 36.8860, lng: 30.6797, time: "10:00 (optional)",
+        name: "Antalya Museum", name_zh: "安塔利亚博物馆", lat: 36.8860, lng: 30.6797, time: "10:00 (optional)",
         note: "Best archaeological museum in Turkey · 09:00–17:00 · ~3.5 km west of hotel via Konyaaltı Cad, 10–15 min taxi. Tip: take the nostalgic tram from museum → Kaleiçi after!",
-        warn: null, optional: true,
+        note_zh: "土耳其最佳考古博物馆 · 09:00–17:00 · 距酒店约3.5公里，打车10–15分钟。小贴士：参观后可乘复古有轨电车从博物馆→卡莱伊奇！",
+        warn: null, warn_zh: null, optional: true,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Antalya+Archaeology+Museum+Konyaalti", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Antalya+Archaeology+Museum+Konyaalti", type: "maps" }
         ]
       },
       {
-        name: "Kaleiçi & Harbour", lat: 36.8823, lng: 30.7053, time: "12:30 (optional)",
+        name: "Kaleiçi & Harbour", name_zh: "卡莱伊奇与港口", lat: 36.8823, lng: 30.7053, time: "12:30 (optional)",
         note: "5 min walk from museum, or taxi from hotel. Lunch at the harbour, wander Old Town at a relaxed pace, cliff views.",
-        warn: null, optional: true,
+        note_zh: "距博物馆步行5分钟，或从酒店打车。在港口用午餐，悠闲漫步老城，欣赏悬崖美景。",
+        warn: null, warn_zh: null, optional: true,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Kaleici+Harbour+Antalya", type: "maps" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Kaleici+Harbour+Antalya", type: "maps" }
         ]
       },
-      hotelStop("antalya", "17:00", "Taxi back to hotel. Pack bags tonight — early airport departure tomorrow.", "Pack tonight!")
+      hotelStop("antalya", "17:00", "Taxi back to hotel. Pack bags tonight — early airport departure tomorrow.", "打车回酒店。今晚打包行李——明天早早出发去机场。", "Pack tonight!", "今晚打包！")
     ]
   },
   {
-    day: 9, date: "Fri 2 May", city: "Istanbul → Chengdu",
+    day: 9, date: "Fri 2 May", date_zh: "周五 5月2日", city: "Istanbul → Chengdu",
     title: "Fly Home via Istanbul",
     flight: "✈ TK2443  AYT 10:20 → IST 12:05\n✈ 3U3828  IST 15:40 → CTU 05:20+1",
     color: "#C4623A",
     stops: [
-      hotelStop("antalya", "08:00", "Check out. Taxi to Antalya Airport — ~20 min drive.", "Check out by 08:00!"),
+      hotelStop("antalya", "08:00", "Check out. Taxi to Antalya Airport — ~20 min drive.", "退房。打车至安塔利亚机场——约20分钟车程。", "Check out by 08:00!", "08:00前退房！"),
       {
-        name: "Antalya Airport (AYT)", lat: 36.8988, lng: 30.8004, time: "08:30",
+        name: "Antalya Airport (AYT)", name_zh: "安塔利亚机场 (AYT)", lat: 36.8988, lng: 30.8004, time: "08:30",
         note: "TK2443 departs 10:20 → Istanbul IST 12:05. Check in with Turkish Airlines.",
-        warn: null,
+        note_zh: "TK2443航班10:20起飞→伊斯坦布尔12:05。在土耳其航空办理值机。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Antalya+Airport+AYT", type: "maps" },
-          { label: "✈ Turkish Airlines", url: "https://www.turkishairlines.com/en-int/flights/manage-booking", type: "book" }
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Antalya+Airport+AYT", type: "maps" },
+          { label: "✈ Turkish Airlines", label_zh: "✈ 土耳其航空", url: "https://www.turkishairlines.com/en-int/flights/manage-booking", type: "book" }
         ]
       },
       {
-        name: "Istanbul Airport (IST) — Transit", lat: 41.2761, lng: 28.7287, time: "12:05",
+        name: "Istanbul Airport (IST) — Transit", name_zh: "伊斯坦布尔机场 (IST) — 中转", lat: 41.2761, lng: 28.7287, time: "12:05",
         note: "~3.5 hrs layover. Stay airside — no need to re-clear security. 3U3828 departs 15:40 → CTU 05:20+1.",
-        warn: null,
+        note_zh: "中转停留约3.5小时。无需重新过安检，留在出发区即可。3U3828航班15:40起飞→成都05:20+1。",
+        warn: null, warn_zh: null,
         links: [
-          { label: "📍 Maps", url: "https://maps.google.com/?q=Istanbul+Airport+IST", type: "maps" },
+          { label: "📍 Maps", label_zh: "📍 地图", url: "https://maps.google.com/?q=Istanbul+Airport+IST", type: "maps" },
           { label: "✈ Sichuan Airlines", url: "https://www.sichuanair.com/en-us", type: "book" }
         ]
       }
@@ -905,7 +1251,7 @@ DAYS.forEach(day => {
     const icon = stop.isHotel ? makeHotelIcon(day.color) : (si === 0 ? makeSvgIcon(day.color, day.day) : makeSmallDot(day.color));
     // Build popup links
     const popupLinks = stop.links.map(l =>
-      `<a class="popup-link" href="${l.url}" target="_blank">${l.label}</a>`
+      `<a class="popup-link" href="${l.url}" target="_blank">${t(l,"label")}</a>`
     ).join('');
     const marker = L.marker([stop.lat, stop.lng], { icon })
       .addTo(map)
@@ -931,14 +1277,15 @@ DAYS.forEach(day => {
   card.className = 'day-card';
   card.id = `day-card-${day.day}`;
 
-  const flightLines = day.flight ? day.flight.split('\n') : [];
+  const flightStr = t(day,'flight');
+  const flightLines = flightStr ? flightStr.split('\n') : [];
   const flightHtml = flightLines.length
     ? `<div class="flight-badge">${flightLines.map(l => `<div>${l}</div>`).join('')}</div>` : '';
 
   const stopsHtml = day.stops.map((s, si) => {
     const dotStyle = `border-color:${s.isHotel ? '#2E7D7A' : day.color};${(si===0||s.isHotel)?`background:${s.isHotel?'#2E7D7A':day.color}`:''}`;
     const linksHtml = s.links.map(l =>
-      `<a class="stop-link ${l.type}" href="${l.url}" target="_blank" onclick="event.stopPropagation()">${l.label}</a>`
+      `<a class="stop-link ${l.type}" href="${l.url}" target="_blank" onclick="event.stopPropagation()">${t(l,"label")}</a>`
     ).join('');
     return `
     <div class="stop-item draggable-stop${s.isHotel ? ' hotel-stop' : ''}${s.optional ? ' optional-stop' : ''}"
@@ -950,11 +1297,11 @@ DAYS.forEach(day => {
         <div class="stop-line" style="background:${day.color}"></div>
       </div>
       <div class="stop-content">
-        <div class="stop-name${s.isHotel?' hotel':''}">${s.name}</div>
+        <div class="stop-name${s.isHotel?' hotel':''}">${t(s,"name")}</div>
         <div class="stop-time">${s.time}</div>
-        <div class="stop-note">${s.note}</div>
-        ${s.optional ? `<div class="optional-badge">✦ Optional</div>` : ''}
-        ${s.warn ? `<div class="stop-warn">⚠️ ${s.warn}</div>` : ''}
+        <div class="stop-note" data-en="${(s.note||'').replace(/"/g,'&quot;')}" data-zh="${(s.note_zh||s.note||'').replace(/"/g,'&quot;')}">${t(s,"note")}</div>
+        ${s.optional ? `<div class="optional-badge">${ui("optionalBadge")}</div>` : ''}
+        ${t(s,"warn") ? `<div class="stop-warn">⚠️ ${t(s,"warn")}</div>` : ''}
         <div class="stop-links">${linksHtml}</div>
       </div>
       <button class="stop-delete-btn" onclick="event.stopPropagation();hideBuiltinStop(this)" title="Hide stop">✕</button>
@@ -964,15 +1311,15 @@ DAYS.forEach(day => {
   card.innerHTML = `
     <div class="day-header" onclick="toggleDay(${day.day})">
       <div class="day-num" style="background:${cityBgMap[day.city]};color:${day.color}">
-        <span class="label">Day</span>
+        <span class="label">${ui("day")}</span>
         <span class="n">${day.day}</span>
       </div>
       <div class="day-info">
-        <h3>${day.title}</h3>
-        <div class="date">${day.date}</div>
+        <h3>${t(day,"title")}</h3>
+        <div class="date">${t(day,"date")}</div>
         <div class="day-meta">
-          <span class="city-tag" style="background:${cityBgMap[day.city]};color:${cityTextMap[day.city]}">${day.city}</span>
-          <span class="weather-badge"><span class="wi">${w.icon}</span>${w.temp} · ${w.note}</span>
+          <span class="city-tag" style="background:${cityBgMap[day.city]};color:${cityTextMap[day.city]}">${t(day,"city")}</span>
+          <span class="weather-badge"><span class="wi">${w.icon}</span>${w.temp} · ${LANG==='zh'&&w.note_zh ? w.note_zh : w.note}</span>
         </div>
       </div>
       <div class="day-chevron">▾</div>
@@ -980,7 +1327,7 @@ DAYS.forEach(day => {
     ${flightHtml}
     <div class="stops-list" id="stops-list-${day.day}">
       ${stopsHtml}
-      <button class="add-stop-btn" onclick="openAddStop(${day.day})">＋ Add a stop</button>
+      <button class="add-stop-btn" onclick="openAddStop(${day.day})">${ui("addStop")}</button>
       <div class="add-stop-form" id="add-stop-form-${day.day}">
         <div class="add-stop-input-row">
           <input class="add-stop-input" id="add-stop-input-${day.day}" 
@@ -1053,6 +1400,8 @@ function ensureSheetOpen() {
 }
 
 let activeDay = null;
+// Tracks days that have been drag-reordered in THIS browser session (not persisted)
+const reorderedInSession = new Set();
 
 function toggleDay(dayNum) {
   const card = document.getElementById(`day-card-${dayNum}`);
@@ -1130,7 +1479,7 @@ function getOrderedStopCoords(dayNum) {
       const idx = parseInt(el.dataset.idx);
       if (day && day.stops[idx]) {
         const s = day.stops[idx];
-        results.push({ lat: s.lat, lng: s.lng, name: s.name, type: 'builtin' });
+        results.push({ lat: s.lat, lng: s.lng, name: s.name, type: 'builtin', el });
       }
     } else if (el.dataset.type === 'custom') {
       const s = customs[el.dataset.id];
@@ -1175,7 +1524,7 @@ function redrawCustomPolylines(dayNum) {
     if (prev) {
       const dist = Math.round(calcDistKm(prev.lat, prev.lng, s.lat, s.lng) * 10) / 10;
       const prevShortName = prev.name.split(/[,(]/)[0].trim();
-      transportText = `~${dist} km from ${prevShortName} · taxi or walk`;
+      transportText = `${ui('distFrom')(dist, prevShortName)} · ${ui('taxiOrWalk')}`;
     }
     // Update the transport line in the sidebar card
     const transportEl = s.el.querySelector('.custom-transport-note');
@@ -1211,11 +1560,18 @@ function addCustomMarkerToMap(dayNum, stop) {
 }
 
 function removeCustomMarkerFromMap(dayNum, stopId) {
-  if (!customMapData[dayNum]) return;
-  const idx = customMapData[dayNum].findIndex(d => d.id === stopId);
-  if (idx !== -1) {
-    if (customMapData[dayNum][idx].marker) map.removeLayer(customMapData[dayNum][idx].marker);
-    customMapData[dayNum].splice(idx, 1);
+  // Search the specified day first, then all other days as fallback
+  // (guards against dayNum mismatches and strict type mismatches on id)
+  const sid = String(stopId);
+  const searchOrder = [dayNum, ...Object.keys(customMapData).map(Number).filter(d => d !== dayNum)];
+  for (const d of searchOrder) {
+    if (!customMapData[d]) continue;
+    const idx = customMapData[d].findIndex(e => String(e.id) === sid);
+    if (idx !== -1) {
+      if (customMapData[d][idx].marker) map.removeLayer(customMapData[d][idx].marker);
+      customMapData[d].splice(idx, 1);
+      return;
+    }
   }
 }
 
@@ -1241,9 +1597,9 @@ function renderCustomStop(dayNum, stop) {
       <div style="font-size:12px;font-weight:600;color:${CUSTOM_COLOR};line-height:1.4;">${stop.name}</div>
       ${stop.transport ? `<div class="custom-transport-note" style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.5;">🚶 ${stop.transport}</div>` : `<div class="custom-transport-note" style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.5;display:none;"></div>`}
       <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center;">
-        <span class="custom-badge">✦ Custom</span>
+        <span class="custom-badge">${ui("customBadge")}</span>
         <a href="${mapsUrl}" target="_blank" onclick="event.stopPropagation()"
-           style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;color:#1A73E8;border:1px solid rgba(26,115,232,0.25);background:rgba(26,115,232,0.06);">📍 Maps</a>
+           class="custom-maps-link" style="font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;color:#1A73E8;border:1px solid rgba(26,115,232,0.25);background:rgba(26,115,232,0.06);">${ui('mapsBtn')}</a>
         ${!stop.lat ? `<span style="font-size:9px;color:var(--muted);opacity:0.7;">📍 not on map</span>` : ''}
       </div>
     </div>
@@ -1265,6 +1621,114 @@ function renderCustomStop(dayNum, stop) {
 }
 
 // ── Universal drag — works for ALL .draggable-stop elements ───────────────
+// ── DYNAMIC TIME REASSIGNMENT ─────────────────────────────────────────────────
+// After any drag-and-drop reorder, redistribute times chronologically
+// so the earliest time always goes to the top stop, latest to the bottom.
+function reassignTimesChronologically(dayNum) {
+  const stopsList = document.getElementById(`stops-list-${dayNum}`);
+  if (!stopsList) return;
+  const day = DAYS.find(d => d.day === dayNum);
+  if (!day) return;
+
+  // Collect all visible non-hotel builtin stops in current DOM order
+  const entries = [];
+  stopsList.querySelectorAll('.draggable-stop').forEach(el => {
+    if (el.style.display === 'none') return;
+    if (el.dataset.type !== 'builtin') return;
+    const idx = parseInt(el.dataset.idx);
+    const stop = day.stops[idx];
+    if (!stop || stop.isHotel) return;
+    const timeEl = el.querySelector('.stop-time');
+    const t = timeEl ? timeEl.textContent.trim() : '';
+    if (t && /^\d{1,2}:\d{2}$/.test(t)) entries.push({ el, timeEl, idx });
+  });
+
+  if (entries.length < 2) return;
+
+  // Gather original times from DAYS data + any stored overrides
+  const data = loadCustomStops();
+  const stored = data[`times_${dayNum}`] || {};
+  const times = entries.map(e => stored[e.idx] || day.stops[e.idx].time || '');
+
+  // Sort chronologically
+  const sorted = [...times].filter(Boolean).sort((a, b) => {
+    const [ah, am] = a.split(':').map(Number);
+    const [bh, bm] = b.split(':').map(Number);
+    return (ah * 60 + am) - (bh * 60 + bm);
+  });
+
+  // Reassign in current order
+  const newMap = {};
+  entries.forEach((e, i) => {
+    const t = sorted[i] || times[i];
+    e.timeEl.textContent = t;
+    newMap[e.idx] = t;
+  });
+
+  // Persist so reload restores the reassigned times
+  data[`times_${dayNum}`] = newMap;
+  saveCustomStops(data);
+}
+
+// ── DYNAMIC BUILTIN TRANSPORT NOTES ──────────────────────────────────────────
+// After drag reorder, replace each builtin stop's note text with a computed
+// distance from its actual predecessor in the new DOM order.
+// Only called for days in reorderedInSession (cleared on page reload).
+function updateBuiltinTransportNotes(dayNum) {
+  const day = DAYS.find(d => d.day === dayNum);
+  if (!day) return;
+
+  const ordered = getOrderedStopCoords(dayNum);
+  if (ordered.length < 2) return;
+
+  for (let i = 0; i < ordered.length; i++) {
+    const s = ordered[i];
+    if (s.type !== 'builtin' || !s.el) continue;
+    const idx = parseInt(s.el.dataset.idx);
+    const stop = day.stops[idx];
+    if (!stop || stop.isHotel) continue; // hotel stops keep their original note
+
+    const noteEl = s.el.querySelector('.stop-note');
+    if (!noteEl) continue;
+
+    // Find nearest visible predecessor with coordinates
+    let prev = null;
+    for (let j = i - 1; j >= 0; j--) {
+      if (ordered[j].lat && ordered[j].lng) { prev = ordered[j]; break; }
+    }
+
+    if (prev && s.lat && s.lng) {
+      const dist = Math.round(calcDistKm(prev.lat, prev.lng, s.lat, s.lng) * 10) / 10;
+      const prevShortName = prev.name.split(/[,(]/)[0].trim();
+      const transportText = `${ui('distFrom')(dist, prevShortName)} · ${ui('taxiOrWalk')}`;
+      noteEl.textContent = `🚶 ${transportText}`;
+      noteEl.style.color = 'var(--teal)';
+    } else {
+      // First visible stop — restore original note
+      noteEl.textContent = LANG === 'zh' ? (noteEl.dataset.zh || noteEl.dataset.en || '') : (noteEl.dataset.en || '');
+      noteEl.style.color = '';
+    }
+  }
+}
+
+// Apply stored time overrides on page load (call after order is restored)
+function applyStoredTimeOverrides(dayNum) {
+  const data = loadCustomStops();
+  const stored = data[`times_${dayNum}`];
+  if (!stored) return;
+  const stopsList = document.getElementById(`stops-list-${dayNum}`);
+  if (!stopsList) return;
+  const day = DAYS.find(d => d.day === dayNum);
+  if (!day) return;
+  stopsList.querySelectorAll('.draggable-stop[data-type="builtin"]').forEach(el => {
+    const idx = parseInt(el.dataset.idx);
+    if (stored[idx] !== undefined) {
+      const timeEl = el.querySelector('.stop-time');
+      if (timeEl) timeEl.textContent = stored[idx];
+    }
+  });
+}
+
 function initDrag(el, dayNum) {
   const handle = el.querySelector('.drag-handle');
   if (!handle) return;
@@ -1358,6 +1822,9 @@ function initDrag(el, dayNum) {
       saveCustomStops(data);
 
       redrawCustomPolylines(dayNum);
+      reassignTimesChronologically(dayNum);
+      reorderedInSession.add(dayNum);
+      updateBuiltinTransportNotes(dayNum);
     }
 
     document.body.classList.add('is-dragging');
@@ -1489,7 +1956,8 @@ function buildTransportNote(dayNum, lat, lng) {
     : (day && day.stops.length > 0 ? day.stops[day.stops.length-1] : null);
   if (!prevStop) return '';
   const dist = Math.round(calcDistKm(prevStop.lat, prevStop.lng, lat, lng) * 10) / 10;
-  return `~${dist} km from ${prevStop.name.split(/[,(]/)[0].trim()} · taxi or walk`;
+  const prevName = prevStop.name.split(/[,(]/)[0].trim();
+  return `${ui('distFrom')(dist, prevName)} · ${ui('taxiOrWalk')}`;
 }
 
 function finaliseStop(dayNum, name, lat, lng, shortAddr) {
@@ -1619,13 +2087,20 @@ async function submitWithCoords(dayNum) {
 }
 
 function deleteCustomStop(dayNum, stopId) {
-  document.getElementById(`custom-stop-${stopId}`)?.remove();
+  const sid = String(stopId);
+  document.getElementById(`custom-stop-${sid}`)?.remove();
   removeCustomMarkerFromMap(dayNum, stopId);
+  // Clean from localStorage — search all days in case dayNum is off
   const data = loadCustomStops();
-  if (data[dayNum]) {
-    data[dayNum] = data[dayNum].filter(s => s.id !== stopId);
-    saveCustomStops(data);
-  }
+  let changed = false;
+  Object.keys(data).forEach(key => {
+    if (Array.isArray(data[key])) {
+      const before = data[key].length;
+      data[key] = data[key].filter(s => String(s.id) !== sid);
+      if (data[key].length !== before) changed = true;
+    }
+  });
+  if (changed) saveCustomStops(data);
   redrawCustomPolylines(dayNum);
 }
 
@@ -1678,8 +2153,16 @@ function calcDistKm(lat1, lng1, lat2, lng2) {
       .map(k => parseInt(k))
   );
   dayNums.forEach(dayNum => redrawCustomPolylines(dayNum));
+  dayNums.forEach(dayNum => applyStoredTimeOverrides(dayNum));
+  // Note: updateBuiltinTransportNotes is NOT called here on load — computed transport notes
+  // only appear live after a drag in the current session (tracked by reorderedInSession).
 })();
 
+// 🌏 Apply saved language on load
+applyLang();
+
+// 🌤 Kick off live weather fetch on every page load
+fetchLiveWeather();
 
 </script>
 </body>
